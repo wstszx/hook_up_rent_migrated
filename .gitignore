@@ -1,0 +1,44 @@
+# IntelliJ
+*.iml
+.idea/
+
+# Dart/Flutter
+.dart_tool/
+.packages
+build/
+coverage/
+*.flutter-plugins
+*.flutter-plugins-dependencies
+
+# iOS/macOS specific
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/ephemeral/
+# Xcode project files to ignore (user-specific)
+ios/Runner.xcworkspace/xcshareddata/
+ios/Runner.xcodeproj/xcshareddata/
+ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/.symlinks/
+# macOS user-specific Xcode files
+macos/Runner.xcworkspace/xcshareddata/
+macos/Runner.xcodeproj/xcshareddata/
+macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/
+
+
+# Android specific
+# android/.gradle/ # Usually handled by android/.gitignore
+# android/local.properties # Usually handled by android/.gitignore
+# android/app/src/main/assets/flutter_assets/ # This is part of build output
+
+# Linux specific
+linux/flutter/ephemeral/
+
+# Windows specific
+windows/flutter/ephemeral/
+
+# General
+.DS_Store
+Thumbs.db
+*.log
