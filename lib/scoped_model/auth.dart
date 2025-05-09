@@ -26,13 +26,34 @@ class AuthModel extends Model {
   }
 
   _getUserInfo(BuildContext context) async {
-    const url = '/user';
-    var res = await DioHttp.of(context).get(url, null, _token);
-    var resMap = json.decode(res.toString());
-    var data = resMap['body'];
-    var userInfo = UserInfo.formJson(data);
-    _userInfo = _userInfo;
-    notifyListeners();
+    const url = '/api/me'; // Corrected API endpoint for fetching user info
+    try {
+      var response = await DioHttp.of(context).get(url, null, _token);
+
+      // Assuming DioHttp is configured to handle JSON and response.data is Map<String, dynamic>
+      if (response.statusCode == 200 && response.data != null && response.data is Map<String, dynamic>) {
+        // The backend /api/me route directly returns the user object (which might be nested if your backend wraps it)
+        // Let's assume the direct user object is what UserInfo.formJson expects or it's in a 'user' field
+        Map<String, dynamic> resData = response.data as Map<String, dynamic>;
+        UserInfo userInfo;
+        if (resData.containsKey('user') && resData['user'] is Map<String, dynamic>) {
+           userInfo = UserInfo.formJson(resData['user'] as Map<String, dynamic>);
+        } else {
+           // If the response IS the user object directly
+           userInfo = UserInfo.formJson(resData);
+        }
+        _userInfo = userInfo; // Corrected assignment
+        notifyListeners();
+      } else {
+        print('Failed to get user info: ${response.statusCode} ${response.data}');
+        // Optionally logout or clear token if user info fetch fails consistently
+        // logout();
+      }
+    } catch (e) {
+      print('Error fetching user info: $e');
+      // Optionally logout or clear token on error
+      // logout();
+    }
   }
 
   void login(String token, BuildContext context) {

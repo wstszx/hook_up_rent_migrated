@@ -32,32 +32,50 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
     // 登录地址
-    // const url = '/user/login';
-    const url = 'https://reqres.in/api/login';
+    const url = '/api/auth/login'; // 指向您本地的后端登录接口
     var params = {
       "username": username,
       "password": password,
     };
 
-    var response = await DioHttp.of(context).post(url, params);
-    var resMap = json.decode(response.toString());
+    try {
+      var response = await DioHttp.of(context).post(url, params);
 
-    int status = resMap['status'];
-    String description = resMap['description'] ?? '内部错误';
-    CommonToast.showToast(description);
+      // Dio通常会自动解析JSON，所以response.data应该是Map<String, dynamic>?
+      if (response.data != null && response.data is Map<String, dynamic>) {
+        Map<String, dynamic> resMap = response.data as Map<String, dynamic>; // Type cast after check
 
-    if (status.toString().startsWith('2')) {
-      String token = resMap['body']['token'];
+        // 检查后端返回的 token 和 message
+        if (response.statusCode == 200 && resMap.containsKey('token')) {
+          String token = resMap['token'];
+          String message = resMap['message'] ?? '登录成功';
+          CommonToast.showToast(message);
 
-      Store store = await Store.getInstance();
-      await store.setString(StoreKeys.token, token);
+          Store store = await Store.getInstance();
+          await store.setString(StoreKeys.token, token);
 
-      ScopedModelHelper.getModel<AuthModel>(context).login(token, context);
+          // 假设 AuthModel 的 login 方法只需要 token
+          ScopedModelHelper.getModel<AuthModel>(context).login(token, context);
 
-      //一秒之后回到上一个页面
-      Timer(Duration(seconds: 1), () {
-        Navigator.of(context).pop();
-      });
+          //一秒之后回到上一个页面
+          Timer(const Duration(seconds: 1), () {
+            if (mounted) { // 检查widget是否还在树中
+              Navigator.of(context).pop();
+            }
+          });
+        } else {
+          // 处理登录失败的情况，例如密码错误
+          String errorMessage = resMap['message'] ?? '登录失败，请检查用户名和密码';
+          CommonToast.showToast(errorMessage);
+        }
+      } else {
+        CommonToast.showToast('登录失败：响应格式不正确');
+      }
+    } catch (e) {
+      // 处理DioException或其他网络错误
+      CommonToast.showToast('登录请求失败，请稍后再试');
+      print('Login Error: $e');
+      // 可以在这里添加更详细的错误处理，例如根据 DioException 的类型
     }
   }
 

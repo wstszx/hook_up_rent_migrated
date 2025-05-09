@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'package:dio/dio.dart'; // Import DioException
 
 import 'package:flutter/material.dart';
 
 import 'utils/common_toast.dart';
 import 'utils/dio_http.dart';
+import '../../config.dart'; // Import Config
 // import 'package:hook_up_rent/pages/utils/common_toast.dart';
 // import 'package:hook_up_rent/pages/utils/dio_http.dart';
 
@@ -47,33 +49,48 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // String url = 'https://example.com/api/register'; // 替换为你的注册接口地址
-    String url = 'https://reqres.in/api/register';
+    String path = '/api/auth/register'; // Path relative to Config.BaseUrl
     var params = {
       'username': username,
       'password': password,
-
     };
-    var response =
-        await DioHttp.of(context).post(url, params); // 使用 DioHttp 发送 POST 请求
-    var resString = json.decode(response.toString());
+    try {
+      var response =
+          await DioHttp.of(context).post(path, params); // Use relative path
 
-    int status = resString['staus'];
-    String description = resString['description'] ?? "内部错误";
-    CommonToast.showToast(description);
-    if (status.toString().startsWith("2")) {
-      // 注册成功
-      _showToast('注册成功');
-      Navigator.of(context).pushReplacementNamed('login');
-    } else if (status == 400) {
-      // 用户名已存在
-      _showToast('用户名已存在');
-    } else if (status == 500) {
-      // 服务器错误
-      _showToast('服务器错误，请稍后再试');
-    } else {
-      // 其他错误
-      _showToast('注册失败，请稍后再试');
+      // Assuming response.data is already a Map<String, dynamic> if the server returns JSON
+      // And Dio is configured to parse JSON responses automatically.
+      Map<String, dynamic>? resData = response.data is Map<String, dynamic> ? response.data as Map<String, dynamic> : null;
+
+      if (resData != null) {
+        // Check if the backend returns a 'status' and 'description' or similar fields.
+        // The actual field names might differ based on your backend implementation.
+        // For now, let's assume the backend directly returns a meaningful status code
+        // in response.statusCode and a message in response.data or a specific field.
+
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          // Successful registration based on HTTP status code
+          _showToast(resData['message'] ?? '注册成功'); // Prefer message from backend if available
+          Navigator.of(context).pushReplacementNamed('login');
+        } else {
+          // Handle other status codes based on your backend's error response structure
+          String errorMessage = resData['message'] ?? resData['error'] ?? '注册失败，请稍后再试';
+          _showToast(errorMessage);
+        }
+      } else {
+        // Response data is not in the expected format or is null
+         _showToast('注册失败：响应格式不正确');
+      }
+    } catch (e) {
+      print('Registration Error Details: $e'); // Print the full error object
+      if (e is DioException) { // Check if it's a DioException for more details
+        print('DioException Response: ${e.response}');
+        print('DioException Type: ${e.type}');
+        print('DioException Message: ${e.message}');
+        // e.error might be the underlying error (e.g., SocketException)
+        print('DioException Underlying Error: ${e.error}');
+      }
+      _showToast('注册请求失败，详情请查看控制台'); // Update toast message
     }
     // if (response.statusCode == 200) {
     //   if (response.data['code'] == 200) {

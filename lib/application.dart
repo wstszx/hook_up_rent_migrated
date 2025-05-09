@@ -34,18 +34,10 @@ class Application extends StatelessWidget {
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             theme: ThemeData(primarySwatch: Colors.green),
-            initialRoute: '/',
-            routes: {
-              '/': (context) => const HomePage(),
-              'login': (context) => const LoginPage(),
-              'register': (context) => const RegisterPage(),
-              'setting': ((context) => const SettingPage()),
-              'search': (context) => const PageContent(name: '搜索'),
-              'room_manage': (context) => const RoomManagePage(),
-              'room_add': (context) => const RoomAddPage(),
-              'room_detail': (context) => const RoomDetailPage(),
-              'test': (context) => const PageContent(name: '开发中...'),
-            },
+            // initialRoute 和 routes 由 FluroRouter 管理
+            onGenerateRoute: router.generator,
+            // 如果需要，可以设置一个 home widget 作为默认路由，或者确保 Fluro 定义了 '/'
+            // home: const HomePage(), // 或者确保 Routes.home ('/') 指向 HomePage
           ),
         ),
       ),
