@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:city_pickers/city_pickers.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:scoped_model/scoped_model.dart';
 import '../../config.dart';
 import '../../models/general_type.dart';
@@ -49,27 +51,97 @@ class _SearchBarState extends State<SearchBar> {
   }
 
   _saveCity(GeneralType city) async {
-    if (city == null) {
-      return;
-    }
     // 保存城市到本地存储
     ScopedModelHelper.getModel<CityModel>(context).city = city;
     var store = await Store.getInstance();
     var cityString = json.encode(city.toJson());
     store.setString(StoreKeys.city, cityString);
-    CommonToast.showToast('城市已切换为${city.name}');
+    if (mounted) {
+      CommonToast.showToast('城市已切换为${city.name}');
+      setState(() {}); // 更新UI以显示新的城市名称
+    }
+  }
+
+  Future<void> _determinePositionAndSetCity() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      CommonToast.showToast('位置服务已禁用。');
+      _loadSavedCityOrDefault(); // 加载已保存的城市或默认城市
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        CommonToast.showToast('位置权限被拒绝。');
+        _loadSavedCityOrDefault();
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      CommonToast.showToast('位置权限被永久拒绝，无法请求权限。');
+      _loadSavedCityOrDefault();
+      return;
+    }
+
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      print('当前经纬度: ${position.latitude}, ${position.longitude}'); // 添加日志
+      List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+
+      if (placemarks.isNotEmpty) {
+        final Placemark place = placemarks.first;
+        String? cityName = place.locality; // locality 通常是城市
+        String? street = place.street;
+        String? subLocality = place.subLocality;
+        String? administrativeArea = place.administrativeArea;
+        print('反向地理编码结果: $place'); // 添加日志
+        print('获取到的城市名 (locality): $cityName, 街道 (street): $street, 区 (subLocality): $subLocality, 省 (administrativeArea): $administrativeArea'); // 添加日志
+
+        if (cityName != null && cityName.isNotEmpty) {
+          // 查找配置中是否存在该城市
+          var foundCity = Config.availableCitys.firstWhere(
+            (city) => cityName.startsWith(city.name) || (administrativeArea != null && administrativeArea.startsWith(city.name)), // 尝试匹配省份（直辖市）
+            orElse: () {
+              CommonToast.showToast('当前城市 ($cityName / $administrativeArea) 尚未开通，已切换到默认城市。');
+              print('城市 ($cityName / $administrativeArea) 未在 Config.availableCitys 找到，使用默认城市'); // 添加日志
+              return Config.availableCitys.first; // 返回默认城市
+            },
+          );
+          print('最终匹配到的城市: ${foundCity.name}'); // 添加日志
+          _saveCity(foundCity);
+        } else {
+          CommonToast.showToast('无法获取城市名称 (locality为空)，已切换到默认城市。');
+          print('无法获取城市名称 (locality为空)，使用默认城市'); // 添加日志
+          _saveCity(Config.availableCitys.first); // 保存默认城市
+        }
+      } else {
+        CommonToast.showToast('无法通过坐标获取位置信息 (placemarks为空)，已切换到默认城市。');
+        print('无法通过坐标获取位置信息 (placemarks为空)，使用默认城市'); // 添加日志
+        _saveCity(Config.availableCitys.first);
+      }
+    } catch (e) {
+      CommonToast.showToast('获取位置失败: $e');
+      print('获取位置或反向地理编码失败: $e'); // 添加日志
+      _loadSavedCityOrDefault();
+    }
   }
 
   // 选择城市
   _changeLocation() async {
     var result = await CityPickers.showCitiesSelector(
         context: context, theme: ThemeData(primaryColor: Colors.green));
-    String? cityName = result?.cityName;
-    if (cityName == null) {
+    String? cityNameFromResult = result?.cityName;
+    if (cityNameFromResult == null) {
       return;
     }
     var city = Config.availableCitys.firstWhere(
-      (city) => cityName.startsWith(city.name),
+      (c) => cityNameFromResult.startsWith(c.name),
       orElse: () {
         CommonToast.showToast('该城市尚未开通');
         return Config.availableCitys.first;
@@ -78,21 +150,35 @@ class _SearchBarState extends State<SearchBar> {
     _saveCity(city);
   }
 
-  _getCity() async {
+  _loadSavedCityOrDefault() async {
     var store = await Store.getInstance();
     var cityString = await store.getString(StoreKeys.city);
-    if (null == cityString) {
-      return;
+    if (cityString != null) {
+      var city = GeneralType.fromJson(json.decode(cityString));
+      ScopedModelHelper.getModel<CityModel>(context).city = city;
+      if (mounted) setState(() {});
+    } else {
+      // 如果没有保存的城市，则设置一个默认城市
+      _saveCity(Config.availableCitys.first);
     }
-    var city = GeneralType.fromJson(json.decode(cityString));
-    ScopedModelHelper.getModel<CityModel>(context).city = city;
   }
+
 
   @override
   void initState() {
     super.initState();
     _focus = FocusNode();
     _controller = TextEditingController(text: widget.inputValue);
+    _getCityThenDeterminePosition();
+  }
+
+  _getCityThenDeterminePosition() async {
+    await _loadSavedCityOrDefault(); // 先尝试加载已保存的城市
+    // 如果 CityModel 中的城市仍然是默认的或者空的，再尝试获取真实位置
+    var currentCity = ScopedModelHelper.getModel<CityModel>(context).city;
+    if (currentCity == null || currentCity.id == Config.availableCitys.first.id) {
+       await _determinePositionAndSetCity();
+    }
   }
 
   @override
@@ -108,17 +194,20 @@ class _SearchBarState extends State<SearchBar> {
                 onTap: () {
                   _changeLocation();
                 },
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.room,
                       color: Colors.green,
                       size: 14,
                     ),
-                    Text(
-                      // city.name,
-                      "北京",
-                      style: TextStyle(color: Colors.black, fontSize: 14),
+                    ScopedModelDescendant<CityModel>(
+                      builder: (context, child, model) {
+                        return Text(
+                          model.city?.name ?? '定位中...', // 从CityModel获取城市名称
+                          style: const TextStyle(color: Colors.black, fontSize: 14),
+                        );
+                      },
                     ),
                   ],
                 ),
