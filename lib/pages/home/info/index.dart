@@ -6,7 +6,9 @@ class Info extends StatelessWidget {
   final bool showTitle;
   final List<InfoItem> dataList;
 
-  const Info({super.key, this.showTitle = false, this.dataList = infoData});
+  // 移除 const 并调用 getGeneratedInfoData()
+  Info({super.key, this.showTitle = false, List<InfoItem>? dataList})
+      : dataList = dataList ?? getGeneratedInfoData();
 
   @override
   Widget build(BuildContext context) {
