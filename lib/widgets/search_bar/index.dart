@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async'; // <--- 添加对 dart:async 的导入
 
 import 'package:flutter/material.dart';
 import 'package:city_pickers/city_pickers.dart';
@@ -63,73 +64,158 @@ class _SearchBarState extends State<SearchBar> {
   }
 
   Future<void> _determinePositionAndSetCity() async {
+    print("_determinePositionAndSetCity: 开始执行");
     bool serviceEnabled;
     LocationPermission permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      CommonToast.showToast('位置服务已禁用。');
-      _loadSavedCityOrDefault(); // 加载已保存的城市或默认城市
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        CommonToast.showToast('位置权限被拒绝。');
+    try {
+      print("_determinePositionAndSetCity: 检查位置服务是否启用...");
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      print("_determinePositionAndSetCity: 位置服务启用状态: $serviceEnabled");
+      if (!serviceEnabled) {
+        CommonToast.showToast('位置服务已禁用。');
+        print("_determinePositionAndSetCity: 位置服务已禁用，调用 _loadSavedCityOrDefault");
         _loadSavedCityOrDefault();
         return;
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      CommonToast.showToast('位置权限被永久拒绝，无法请求权限。');
-      _loadSavedCityOrDefault();
-      return;
-    }
+      print("_determinePositionAndSetCity: 检查位置权限...");
+      permission = await Geolocator.checkPermission();
+      print("_determinePositionAndSetCity: 当前位置权限: $permission");
 
-    try {
-      Position position = await Geolocator.getCurrentPosition();
-      print('当前经纬度: ${position.latitude}, ${position.longitude}'); // 添加日志
+      if (permission == LocationPermission.denied) {
+        print("_determinePositionAndSetCity: 位置权限被拒绝，请求权限...");
+        permission = await Geolocator.requestPermission();
+        print("_determinePositionAndSetCity: 请求后的位置权限: $permission");
+        if (permission == LocationPermission.denied) {
+          CommonToast.showToast('位置权限被拒绝。');
+          print("_determinePositionAndSetCity: 权限再次被拒绝，调用 _loadSavedCityOrDefault");
+          _loadSavedCityOrDefault();
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        CommonToast.showToast('位置权限被永久拒绝，无法请求权限。');
+        print("_determinePositionAndSetCity: 权限被永久拒绝，调用 _loadSavedCityOrDefault");
+        _loadSavedCityOrDefault();
+        return;
+      }
+
+      print("_determinePositionAndSetCity: 权限检查通过 ($permission)，尝试获取当前位置...");
+      Position? position;
+      try {
+        print("_determinePositionAndSetCity: 尝试获取当前位置 (超时10秒)...");
+        position = await Geolocator.getCurrentPosition(
+          timeLimit: const Duration(seconds: 10), // 设置10秒超时
+        );
+        // geolocator 插件在成功时保证 position 不为 null，如果为 null 通常意味着 timeLimit 生效前发生了其他错误或插件内部逻辑问题
+        // 但为保险起见，可以保留一个检查，尽管 timeLimit 超时会抛 TimeoutException
+        if (position == null) {
+           print('_determinePositionAndSetCity: getCurrentPosition 返回 null (这通常不应在成功路径发生)');
+           throw Exception('未能获取到位置信息 (返回null)');
+        }
+        print('_determinePositionAndSetCity: 当前经纬度: ${position.latitude}, ${position.longitude}');
+      } on TimeoutException catch (e, s) {
+        print('_determinePositionAndSetCity: 获取当前位置超时 (10秒): $e');
+        print('_determinePositionAndSetCity: 超时异常堆栈: $s');
+        CommonToast.showToast('获取当前位置超时，将使用已保存或默认城市。');
+        _loadSavedCityOrDefault();
+        return;
+      } catch (e, s) {
+        print('_determinePositionAndSetCity: 调用 Geolocator.getCurrentPosition 失败: $e');
+        print('_determinePositionAndSetCity: getCurrentPosition 异常堆栈: $s');
+        // 尝试提取更简洁的错误信息给用户
+        String errorMessage = e.toString();
+        if (e is Exception) {
+          // 尝试去除 "Exception: " 前缀
+          errorMessage = errorMessage.replaceFirst(RegExp(r'^Exception: '), '');
+        } else if (e is Error) {
+           errorMessage = errorMessage.replaceFirst(RegExp(r'^Error: '), '');
+        }
+        CommonToast.showToast('无法获取当前位置: $errorMessage');
+        _loadSavedCityOrDefault();
+        return;
+      }
+      
+      print("_determinePositionAndSetCity: 尝试进行反向地理编码...");
       List<Placemark> placemarks = await placemarkFromCoordinates(position.latitude, position.longitude);
+      print('_determinePositionAndSetCity: 反向地理编码结果 placemarks isNotEmpty: ${placemarks.isNotEmpty}');
 
       if (placemarks.isNotEmpty) {
         final Placemark place = placemarks.first;
-        String? cityName = place.locality; // locality 通常是城市
+        String? cityName = place.locality;
         String? street = place.street;
         String? subLocality = place.subLocality;
-        String? administrativeArea = place.administrativeArea;
-        print('反向地理编码结果: $place'); // 添加日志
-        print('获取到的城市名 (locality): $cityName, 街道 (street): $street, 区 (subLocality): $subLocality, 省 (administrativeArea): $administrativeArea'); // 添加日志
+        String? administrativeArea = place.administrativeArea; // 省或直辖市
+        print('_determinePositionAndSetCity: 反向地理编码详细结果: $place');
+        print('_determinePositionAndSetCity: 获取到的城市名 (locality): $cityName, 街道 (street): $street, 区 (subLocality): $subLocality, 省/直辖市 (administrativeArea): $administrativeArea');
+
+        String? finalCityNameForSave;
+        String? cityIdForSave;
 
         if (cityName != null && cityName.isNotEmpty) {
-          // 查找配置中是否存在该城市
-          var foundCity = Config.availableCitys.firstWhere(
-            (city) => cityName.startsWith(city.name) || (administrativeArea != null && administrativeArea.startsWith(city.name)), // 尝试匹配省份（直辖市）
-            orElse: () {
-              CommonToast.showToast('当前城市 ($cityName / $administrativeArea) 尚未开通，已切换到默认城市。');
-              print('城市 ($cityName / $administrativeArea) 未在 Config.availableCitys 找到，使用默认城市'); // 添加日志
-              return Config.availableCitys.first; // 返回默认城市
-            },
-          );
-          print('最终匹配到的城市: ${foundCity.name}'); // 添加日志
-          _saveCity(foundCity);
+          finalCityNameForSave = cityName;
+        } else if (administrativeArea != null && administrativeArea.isNotEmpty) {
+          // 如果 locality 为空，但 administrativeArea 存在 (例如某些情况下，直辖市可能 locality 为空)
+          finalCityNameForSave = administrativeArea;
+          print('_determinePositionAndSetCity: locality 为空，使用 administrativeArea: $finalCityNameForSave');
+        }
+
+        if (finalCityNameForSave != null) {
+          // 优先使用 administrativeArea 作为城市名，如果它看起来更像一个城市并且与 locality 不同
+          // (例如 locality 是 "朝阳区", administrativeArea 是 "北京市")
+          if (administrativeArea != null &&
+              administrativeArea.isNotEmpty &&
+              administrativeArea.endsWith('市') && // 确保是 xx市
+              finalCityNameForSave != administrativeArea && // 确保不重复
+              !finalCityNameForSave.startsWith(administrativeArea.replaceAll('市', '')) // 避免 "北京市北京"
+              ) {
+            // 进一步判断，如果 locality 只是 administrativeArea 的一部分 (如区名)
+            if (administrativeArea.contains(finalCityNameForSave) && finalCityNameForSave.length < administrativeArea.length) {
+                 print('_determinePositionAndSetCity: administrativeArea ($administrativeArea) 看起来更像城市名，覆盖 locality ($finalCityNameForSave)');
+                 finalCityNameForSave = administrativeArea;
+            } else if (!finalCityNameForSave.contains(administrativeArea) && !administrativeArea.contains(finalCityNameForSave)) {
+                 // 如果两者不互相包含，且 administrativeArea 是城市，也优先用它
+                 print('_determinePositionAndSetCity: administrativeArea ($administrativeArea) 与 locality ($finalCityNameForSave) 不包含，优先使用 administrativeArea');
+                 finalCityNameForSave = administrativeArea;
+            }
+          }
+          
+          // 去除末尾的“市”字，除非是单字城市名
+          String processedCityName = finalCityNameForSave;
+          if (processedCityName.endsWith('市') && processedCityName.length > 1) {
+            processedCityName = processedCityName.substring(0, processedCityName.length - 1);
+          }
+          cityIdForSave = processedCityName; // ID 使用处理后的城市名
+
+          print('_determinePositionAndSetCity: 最终用于保存的城市名: $processedCityName, ID: $cityIdForSave');
+          _saveCity(GeneralType(processedCityName, cityIdForSave));
         } else {
-          CommonToast.showToast('无法获取城市名称 (locality为空)，已切换到默认城市。');
-          print('无法获取城市名称 (locality为空)，使用默认城市'); // 添加日志
-          _saveCity(Config.availableCitys.first); // 保存默认城市
+          CommonToast.showToast('无法获取有效城市名称，已切换到默认城市。');
+          print('_determinePositionAndSetCity: 无法获取有效城市名称 (finalCityNameForSave is null)，使用默认城市');
+          if (Config.availableCitys.isNotEmpty) {
+            _saveCity(Config.availableCitys.first);
+          } else {
+            print("_determinePositionAndSetCity: 错误：无法设置默认城市，因为 Config.availableCitys 为空。");
+          }
         }
       } else {
         CommonToast.showToast('无法通过坐标获取位置信息 (placemarks为空)，已切换到默认城市。');
-        print('无法通过坐标获取位置信息 (placemarks为空)，使用默认城市'); // 添加日志
-        _saveCity(Config.availableCitys.first);
+        print('_determinePositionAndSetCity: 无法通过坐标获取位置信息 (placemarks为空)，使用默认城市');
+        if (Config.availableCitys.isNotEmpty) {
+          _saveCity(Config.availableCitys.first);
+        } else {
+            print("_determinePositionAndSetCity: 错误：无法设置默认城市，因为 Config.availableCitys 为空。");
+        }
       }
-    } catch (e) {
+    } catch (e, s) {
       CommonToast.showToast('获取位置失败: $e');
-      print('获取位置或反向地理编码失败: $e'); // 添加日志
+      print('_determinePositionAndSetCity: 获取位置或反向地理编码失败: $e');
+      print('_determinePositionAndSetCity: 异常堆栈: $s');
       _loadSavedCityOrDefault();
     }
+    print("_determinePositionAndSetCity: 执行完毕");
   }
 
   // 选择城市
@@ -140,26 +226,49 @@ class _SearchBarState extends State<SearchBar> {
     if (cityNameFromResult == null) {
       return;
     }
-    var city = Config.availableCitys.firstWhere(
-      (c) => cityNameFromResult.startsWith(c.name),
-      orElse: () {
-        CommonToast.showToast('该城市尚未开通');
-        return Config.availableCitys.first;
-      },
-    );
-    _saveCity(city);
+    // 直接使用选择器返回的城市名
+    // 将城市名本身用作 id
+    String cityId = cityNameFromResult;
+    // 尝试去除城市名末尾的“市”字，除非它是单字城市名
+    if (cityNameFromResult.endsWith('市') && cityNameFromResult.length > 1) {
+      cityNameFromResult = cityNameFromResult.substring(0, cityNameFromResult.length - 1);
+      // 如果ID也是基于处理前的城市名，也同步处理
+      // cityId = cityNameFromResult; // 如果希望ID也是处理后的
+    }
+
+    print('手动选择的城市: $cityNameFromResult, 使用的ID: $cityId');
+    _saveCity(GeneralType(cityNameFromResult, cityId));
   }
 
   _loadSavedCityOrDefault() async {
     var store = await Store.getInstance();
     var cityString = await store.getString(StoreKeys.city);
+    CityModel cityModel = ScopedModelHelper.getModel<CityModel>(context);
     if (cityString != null) {
+      print("从本地存储加载城市: $cityString");
       var city = GeneralType.fromJson(json.decode(cityString));
-      ScopedModelHelper.getModel<CityModel>(context).city = city;
-      if (mounted) setState(() {});
+      cityModel.city = city; // 这会触发 CityModel 中的 notifyListeners
     } else {
-      // 如果没有保存的城市，则设置一个默认城市
-      _saveCity(Config.availableCitys.first);
+      print("本地存储中未找到城市，设置默认城市。");
+      if (Config.availableCitys.isNotEmpty) {
+        cityModel.city = Config.availableCitys.first; // 设置默认城市
+      } else {
+        print("警告: Config.availableCitys 为空，无法设置默认城市。");
+        // 在这种情况下，cityModel.city 将保持 null，UI会显示 "定位中..."
+      }
+    }
+    // ScopedModelDescendant 会监听 CityModel 的变化，所以这里通常不需要显式调用 setState 来更新 SearchBar 自身因城市文本变化的部分。
+    // 但如果 cityModel.city 初始为 null (例如 Config.availableCitys 也为空)，确保UI能正确显示 "定位中..."
+    if (mounted && cityModel.city == null) {
+        // 如果 cityModel.city 仍然是 null (例如 availableCitys 为空),
+        // cityNameOrDefault 会返回 '定位中...'，ScopedModelDescendant 会处理。
+        // 但为了确保 SearchBar 自身在某些复杂情况下也能响应 cityModel 初始为 null 的状态，可以保留一个 setState。
+        // 不过，更标准的做法是依赖 ScopedModel 的更新机制。
+        // 为减少不必要的 setState 调用，此处暂时注释掉，依赖 CityModel 的 notifyListeners。
+        // setState(() {});
+        print("_loadSavedCityOrDefault 完成后, cityModel.city is null");
+    } else if (mounted) {
+        print("_loadSavedCityOrDefault 完成后, cityModel.city is ${cityModel.city?.name}");
     }
   }
 
@@ -175,8 +284,16 @@ class _SearchBarState extends State<SearchBar> {
   _getCityThenDeterminePosition() async {
     await _loadSavedCityOrDefault(); // 先尝试加载已保存的城市
     // 如果 CityModel 中的城市仍然是默认的或者空的，再尝试获取真实位置
-    var currentCity = ScopedModelHelper.getModel<CityModel>(context).city;
-    if (currentCity == null || currentCity.id == Config.availableCitys.first.id) {
+    var currentCity = ScopedModelHelper.getModel<CityModel>(context).city; // city is now nullable
+    // 如果没有已保存的城市 (currentCity is null after _loadSavedCityOrDefault)
+    // 或者已保存的城市是默认城市，则尝试获取真实位置
+    if (currentCity == null || (Config.availableCitys.isNotEmpty && currentCity.id == Config.availableCitys.first.id)) {
+       print("当前城市为空 (${currentCity?.name}) 或为默认城市，尝试获取真实定位...");
+       await _determinePositionAndSetCity();
+    } else if (currentCity != null) {
+       print("已加载到已保存的城市: ${currentCity.name}, 无需自动定位。");
+    } else {
+       print("Config.availableCitys 为空且无已保存城市，尝试获取真实定位..."); // 覆盖 availableCitys 为空的情况
        await _determinePositionAndSetCity();
     }
   }
@@ -203,8 +320,9 @@ class _SearchBarState extends State<SearchBar> {
                     ),
                     ScopedModelDescendant<CityModel>(
                       builder: (context, child, model) {
+                        // print("SearchBar build: CityModel.cityNameOrDefault is ${model.cityNameOrDefault}"); // 日志确认UI更新
                         return Text(
-                          model.city?.name ?? '定位中...', // 从CityModel获取城市名称
+                          model.cityNameOrDefault,
                           style: const TextStyle(color: Colors.black, fontSize: 14),
                         );
                       },
