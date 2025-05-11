@@ -48,9 +48,7 @@ class _FilterBarState extends State<FilterBar> {
     final cityModel = ScopedModelHelper.getModel<CityModel>(context);
     String? currentCityNameFromModel = cityModel.city?.name;
 
-    List<file_data.GeneralType> dynamicAreaList = [
-      file_data.GeneralType('不限', 'area_any')
-    ];
+    List<file_data.GeneralType> dynamicAreaOptions; // 用于 CommonPicker 的选项
 
     if (currentCityNameFromModel != null && currentCityNameFromModel != '定位中...') {
       String normalizedCurrentCity = _normalizeCityName(currentCityNameFromModel);
@@ -58,22 +56,37 @@ class _FilterBarState extends State<FilterBar> {
         var cityInfo = file_data.cityAreaListData.firstWhere(
           (cityData) => _normalizeCityName(cityData.cityName) == normalizedCurrentCity,
         );
+        // 直接使用 cityInfo.districts，它已经包含了针对该城市的 "不限"
         if (cityInfo.districts.isNotEmpty) {
-          dynamicAreaList.addAll(cityInfo.districts);
+          dynamicAreaOptions = List<file_data.GeneralType>.from(cityInfo.districts);
+        } else {
+          // 如果城市存在但 districts 为空 (例如济源市等)，提供一个该城市特定的“不限”
+          // 或者一个更通用的 'area_any'，取决于产品设计
+          dynamicAreaOptions = [file_data.GeneralType('不限', '${normalizedCurrentCity}_area_any')];
         }
       } catch (e) {
-        print('City not found or no districts for: $currentCityNameFromModel (normalized: $normalizedCurrentCity). Error: $e');
+        // 如果未找到城市，提供一个通用的“不限”
+        print('City not found in cityAreaListData: $currentCityNameFromModel (normalized: $normalizedCurrentCity). Error: $e');
+        dynamicAreaOptions = [file_data.GeneralType('不限', 'area_any')];
       }
+    } else {
+      // 如果城市名为空或正在定位，也提供一个通用的“不限”
+      dynamicAreaOptions = [file_data.GeneralType('不限', 'area_any')];
     }
     
+    // 确保 dynamicAreaOptions 至少有一个元素，以防万一
+    if (dynamicAreaOptions.isEmpty) {
+        dynamicAreaOptions = [file_data.GeneralType('不限', 'area_any')];
+    }
+
     setState(() {
       isAreaActive = true;
     });
 
     var result = CommonPicker.showPicker(
-      value: 0,
+      value: 0, // 默认选中第一个
       context: context,
-      options: dynamicAreaList.map((item) => item.name).toList(),
+      options: dynamicAreaOptions.map((item) => item.name).toList(),
     );
 
     if (result == null) {
@@ -88,7 +101,8 @@ class _FilterBarState extends State<FilterBar> {
       }
       if (mounted) {
         setState(() {
-          areaId = dynamicAreaList[index].id;
+          // 使用 dynamicAreaOptions 来获取选择的 ID
+          areaId = dynamicAreaOptions[index].id;
         });
       }
       _onChange(); 
@@ -209,7 +223,9 @@ class _FilterBarState extends State<FilterBar> {
     orientedList = file_data.orientedList;
     floorList = file_data.floorList;
 
-    areaId = areaList.isNotEmpty ? areaList[0].id : 'area_any';
+    // areaId 的初始值依赖 areaList，areaList 的初始值是 [GeneralType('不限', 'area_any')]
+    // 这是合理的，因为在用户首次与区域筛选交互前，它应该代表“不限区域”
+    areaId = areaList.isNotEmpty ? areaList[0].id : 'area_any'; 
     rentTypeId = rentTypeList.isNotEmpty ? rentTypeList[0].id : 'rent_type_any';
     priceId = priceList.isNotEmpty ? priceList[0].id : 'price_any';
 
