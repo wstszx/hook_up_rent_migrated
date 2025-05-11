@@ -89,9 +89,9 @@ class RoomApplicanceList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var showList =
+    final showList =
         _dataList.where((item) => list.contains(item.title)).toList();
-    showList = Random().nextInt(5) % 2 == 0 ? [] : showList;
+    // showList = Random().nextInt(5) % 2 == 0 ? [] : showList; // Removed random behavior
     if (showList.isEmpty) {
       return Container(
         padding: const EdgeInsets.only(left: 10),

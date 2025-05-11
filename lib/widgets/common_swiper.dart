@@ -32,8 +32,8 @@ class CommonSwiper extends StatelessWidget {
             fit: BoxFit.fill,
           );
         },
-        itemCount: 3,
-        pagination: const SwiperPagination(),
+        itemCount: images.length, // Use the actual length of the images list
+        pagination: images.length > 1 ? const SwiperPagination() : null, // Only show pagination if there's more than one image
         // control: const SwiperControl(),
       ),
     );
