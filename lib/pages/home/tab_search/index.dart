@@ -3,6 +3,7 @@ import 'package:hook_up_rent/config.dart';
 import 'package:hook_up_rent/pages/home/tab_search/data_list.dart';
 import 'package:hook_up_rent/pages/home/tab_search/filter_bar/filter_drawer.dart';
 import 'package:hook_up_rent/pages/home/tab_search/filter_bar/index.dart';
+import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart' as filter_data; // Added import
 import 'package:hook_up_rent/pages/utils/dio_http.dart';
 import 'package:hook_up_rent/widgets/root_list_item_widget.dart';
 import 'package:hook_up_rent/widgets/search_bar/index.dart' as custom;
@@ -17,10 +18,12 @@ class TabSearch extends StatefulWidget {
 class _TabSearchState extends State<TabSearch> {
   List<RoomListItemData> _roomList = [];
   bool _isLoading = true;
+  filter_data.FilterBarResult? _currentFilterParams; // 用于存储当前的筛选参数
 
   @override
   void initState() {
     super.initState();
+    // 初始加载时 _currentFilterParams 为 null，_fetchRoomsData 会处理默认参数
     _fetchRoomsData();
   }
 
@@ -28,10 +31,33 @@ class _TabSearchState extends State<TabSearch> {
     setState(() {
       _isLoading = true;
     });
+
+    Map<String, dynamic> apiParams = {};
+
+    if (_currentFilterParams != null) {
+      apiParams = _currentFilterParams!.toMap();
+    }
+
+    // 确保 '整租' 页面默认筛选 rentType，除非已被其他筛选覆盖
+    // Room.js 定义 rentType 是必需的，所以这里确保它存在
+    if (apiParams['rentType'] == null || (apiParams['rentType'] as String).isEmpty) {
+       // 如果 FilterBarResult 中没有 rentType，或者为空，则默认为 '整租'
+       // 如果 FilterBarResult 中有 rentType 且不为空，则使用 FilterBarResult 中的值
+       // 这里的逻辑是，如果用户通过筛选明确选择了其他 rentType，则使用用户的选择
+       // 如果用户没有通过筛选选择 rentType（例如清除了筛选），则默认为 '整租'
+       // 或者，如果 _currentFilterParams 本身就是 null (初始加载)，也默认为 '整租'
+      if (_currentFilterParams == null || _currentFilterParams?.rentTypeId == null || _currentFilterParams!.rentTypeId!.isEmpty || _currentFilterParams!.rentTypeId == 'rent_type_any') {
+        apiParams['rentType'] = '整租';
+      }
+      // 如果 _currentFilterParams.rentTypeId 有具体值 (不是 'rent_type_any' 且不为空),
+      // 那么 toMap() 已经将其加入 apiParams，这里不需要再覆盖。
+    }
+
+
     try {
       final response = await DioHttp.of(context).get(
         '/api/rooms',
-        {'rentType': '整租'},
+        apiParams, // 使用动态构建的参数
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -113,9 +139,16 @@ class _TabSearchState extends State<TabSearch> {
       ),
       body: Column(
         children: [
-          const SizedBox(
-            height: 41,
-            child: FilterBar(),
+          SizedBox(
+            height: 41, // FilterBar 的固定高度
+            child: FilterBar(
+              onChange: (filter_data.FilterBarResult result) {
+                setState(() {
+                  _currentFilterParams = result;
+                });
+                _fetchRoomsData(); // 当筛选条件改变时，重新获取数据
+              },
+            ),
           ),
           Expanded(
             child: _isLoading

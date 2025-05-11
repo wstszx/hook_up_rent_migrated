@@ -1,17 +1,38 @@
 // 结果数据类型
 class FilterBarResult {
-  final String? areaId; // 区域
-  final String? priceId; // 租金
-  final String? rentTypeId; // 方式
-  final List<String>? moreIds; // 筛选
+  final String? cityId; // 对应 Room.js city (通过 cityId 获取城市名)
+  final String? districtId; // 对应 Room.js district (areaId 可能就是 districtId)
+  final String? rentTypeId; // 对应 Room.js rentType
+  final String? priceId; // 对应 Room.js price (priceId 需要映射到价格范围)
+  final List<String>? roomTypeIds; // 对应 Room.js roomType (多选)
+  final List<String>? orientationIds; // 对应 Room.js orientation (多选)
+  final List<String>? floorIds; // 对应 Room.js floor (多选)
+  final List<String>? tagIds; // 对应 Room.js tags (多选)
 
-  FilterBarResult(
-      {this.areaId,
-      this.priceId,
-      this.rentTypeId,
-      this.moreIds,
-      String? priceTypeId,
-      List<String>? moreId});
+  FilterBarResult({
+    this.cityId,
+    this.districtId, // 替换旧的 areaId
+    this.rentTypeId,
+    this.priceId,
+    this.roomTypeIds, // roomTypeIds, orientationIds, floorIds, tagIds 替换旧的 moreIds
+    this.orientationIds,
+    this.floorIds,
+    this.tagIds,
+  });
+
+  // Helper to convert to a map, useful for query parameters
+  Map<String, dynamic> toMap() {
+    Map<String, dynamic> map = {};
+    if (cityId != null && cityId!.isNotEmpty) map['city'] = cityId;
+    if (districtId != null && districtId!.isNotEmpty) map['district'] = districtId;
+    if (rentTypeId != null && rentTypeId!.isNotEmpty) map['rentType'] = rentTypeId;
+    if (priceId != null && priceId!.isNotEmpty) map['price'] = priceId;
+    if (roomTypeIds != null && roomTypeIds!.isNotEmpty) map['roomType'] = roomTypeIds!.join(',');
+    if (orientationIds != null && orientationIds!.isNotEmpty) map['orientation'] = orientationIds!.join(',');
+    if (floorIds != null && floorIds!.isNotEmpty) map['floor'] = floorIds!.join(',');
+    if (tagIds != null && tagIds!.isNotEmpty) map['tags'] = tagIds!.join(',');
+    return map;
+  }
 }
 
 // 通用类型
@@ -1428,4 +1449,19 @@ List<GeneralType> orientedList = [
 List<GeneralType> floorList = [
   GeneralType('楼层1', 'aa'),
   GeneralType('楼层2', 'bb'),
+];
+
+// 标签列表
+List<GeneralType> tagList = [
+  GeneralType('不限', 'tag_any'), // 添加 "不限" 选项
+  GeneralType('近地铁', 'tag_subway'),
+  GeneralType('精装修', 'tag_renovated'),
+  GeneralType('拎包入住', 'tag_furnished'),
+  GeneralType('押一付一', 'tag_deposit_1_pay_1'),
+  GeneralType('随时看房', 'tag_anytime'),
+  GeneralType('集中供暖', 'tag_central_heating'),
+  GeneralType('独立卫生间', 'tag_private_bathroom'),
+  GeneralType('可做饭', 'tag_cook'),
+  GeneralType('有阳台', 'tag_balcony'),
+  GeneralType('宠物友好', 'tag_pet_friendly'),
 ];
