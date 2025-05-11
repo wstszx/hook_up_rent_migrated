@@ -6,6 +6,7 @@ import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart' as file
 import 'package:hook_up_rent/pages/home/tab_search/filter_bar/item.dart';
 import 'package:hook_up_rent/pages/utils/common_picker/index.dart';
 import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
+import 'package:hook_up_rent/scoped_model/city.dart'; // 导入 CityModel
 import 'package:hook_up_rent/scoped_model/room_filter.dart';
 
 class FilterBar extends StatefulWidget {
@@ -18,50 +19,86 @@ class FilterBar extends StatefulWidget {
 }
 
 class _FilterBarState extends State<FilterBar> {
-  List<file_data.GeneralType> areaList = [];
+  List<file_data.GeneralType> areaList = [file_data.GeneralType('不限', 'area_any')];
   List<file_data.GeneralType> priceList = [];
   List<file_data.GeneralType> rentTypeList = [];
   List<file_data.GeneralType> roomTypeList = [];
   List<file_data.GeneralType> orientedList = [];
   List<file_data.GeneralType> floorList = [];
-  // 搜索是否激活
+
   bool isAreaActive = false;
   bool isRentTypeActive = false;
   bool isPriceActive = false;
   bool isFilterActive = false;
 
-  // 搜索内容
-  String areaId = '';
-  String rentTypeId = '';
-  String priceId = '';
+  String areaId = 'area_any';
+  String rentTypeId = 'rent_type_any';
+  String priceId = 'price_any';
   List<String> moreIds = [];
 
+  // 辅助函数：移除城市名称末尾的 "市" 字
+  String _normalizeCityName(String cityName) {
+    if (cityName.endsWith('市')) {
+      return cityName.substring(0, cityName.length - 1);
+    }
+    return cityName;
+  }
+
   _onAreaChange(context) {
+    final cityModel = ScopedModelHelper.getModel<CityModel>(context);
+    String? currentCityNameFromModel = cityModel.city?.name;
+
+    List<file_data.GeneralType> dynamicAreaList = [
+      file_data.GeneralType('不限', 'area_any')
+    ];
+
+    if (currentCityNameFromModel != null && currentCityNameFromModel != '定位中...') {
+      String normalizedCurrentCity = _normalizeCityName(currentCityNameFromModel);
+      try {
+        var cityInfo = file_data.cityAreaListData.firstWhere(
+          (cityData) => _normalizeCityName(cityData.cityName) == normalizedCurrentCity,
+        );
+        if (cityInfo.districts.isNotEmpty) {
+          dynamicAreaList.addAll(cityInfo.districts);
+        }
+      } catch (e) {
+        print('City not found or no districts for: $currentCityNameFromModel (normalized: $normalizedCurrentCity). Error: $e');
+      }
+    }
+    
     setState(() {
-      // 设置区域选中效果
       isAreaActive = true;
     });
 
     var result = CommonPicker.showPicker(
       value: 0,
       context: context,
-      options: areaList.map((item) => item.name).toList(),
+      options: dynamicAreaList.map((item) => item.name).toList(),
     );
 
-    if (result == null) return;
+    if (result == null) {
+       if (mounted) { setState(() { isAreaActive = false; }); }
+       return;
+    }
 
     result.then((index) {
-      if (index == null) return;
-      setState(() {
-        areaId = areaList[index].id;
-      });
+      if (index == null) {
+        if (mounted) { setState(() { isAreaActive = false; }); }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          areaId = dynamicAreaList[index].id;
+        });
+      }
+      _onChange(); 
     }).whenComplete(() {
-      setState(() {
-        // 取消区域选中效果
-        isAreaActive = false;
-      });
+      if (mounted) {
+        setState(() {
+          isAreaActive = false;
+        });
+      }
     });
-    _onChange();
   }
 
   _onRentTypeChange(context) {
@@ -75,51 +112,69 @@ class _FilterBarState extends State<FilterBar> {
       options: rentTypeList.map((item) => item.name).toList(),
     );
 
-    if (result == null) return;
+     if (result == null) {
+       if (mounted) { setState(() { isRentTypeActive = false; }); }
+       return;
+    }
 
     result.then((index) {
-      if (index == null) return;
-      setState(() {
-        rentTypeId = rentTypeList[index].id;
-      });
+      if (index == null) {
+         if (mounted) { setState(() { isRentTypeActive = false; }); }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          rentTypeId = rentTypeList[index].id;
+        });
+      }
+      _onChange();
     }).whenComplete(() {
-      setState(() {
-        isRentTypeActive = false;
-      });
+      if (mounted) {
+        setState(() {
+          isRentTypeActive = false;
+        });
+      }
     });
-    _onChange();
   }
 
   _onPriceChange(context) {
     setState(() {
-      isPriceActive = !isPriceActive;
+      isPriceActive = true;
     });
     var result = CommonPicker.showPicker(
         value: 0,
         context: context,
         options: priceList.map((item) => item.name).toList());
 
-    if (result == null) return;
+    if (result == null) {
+       if (mounted) { setState(() { isPriceActive = false; }); }
+       return;
+    }
 
     result.then((index) {
-      if (index == null) return;
-      setState(() {
-        areaId = priceList[index].id;
-      });
+      if (index == null) {
+        if (mounted) { setState(() { isPriceActive = false; }); }
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          priceId = priceList[index].id;
+        });
+      }
+      _onChange();
+    }).whenComplete(() {
+      if (mounted) {
+        setState(() {
+          isPriceActive = false;
+        });
+      }
     });
-    result.whenComplete(() {
-      setState(() {
-        isPriceActive = false;
-      });
-    });
-    _onChange();
   }
 
   _onFilterChange(context) {
     Scaffold.of(context).openEndDrawer();
   }
 
-  // 响应给父组件
   _onChange() {
     var selectedList =
         ScopedModelHelper.getModel<FilterBarModel>(context).selectedList;
@@ -129,7 +184,6 @@ class _FilterBarState extends State<FilterBar> {
           areaId: areaId,
           rentTypeId: rentTypeId,
           priceId: priceId,
-          moreId: moreIds,
           moreIds: selectedList.toList(),
         ),
       );
@@ -147,23 +201,23 @@ class _FilterBarState extends State<FilterBar> {
 
   @override
   void initState() {
-    super.initState(); // It's a good practice to call super.initState() first.
-
-    // Initialize state lists from the global lists in data.dart
-    // Now the local state lists will have the correct data from the file.
-    areaList = file_data.areaList;
+    super.initState(); 
+    
     priceList = file_data.priceList;
     rentTypeList = file_data.rentTypeList;
     roomTypeList = file_data.roomTypeList;
     orientedList = file_data.orientedList;
     floorList = file_data.floorList;
 
-    Timer.run(_getData); // _getData will now use the initialized lists to populate ScopedModel
+    areaId = areaList.isNotEmpty ? areaList[0].id : 'area_any';
+    rentTypeId = rentTypeList.isNotEmpty ? rentTypeList[0].id : 'rent_type_any';
+    priceId = priceList.isNotEmpty ? priceList[0].id : 'price_any';
+
+    Timer.run(_getData); 
   }
 
   @override
   void didChangeDependencies() {
-    _onChange();
     super.didChangeDependencies();
   }
 
