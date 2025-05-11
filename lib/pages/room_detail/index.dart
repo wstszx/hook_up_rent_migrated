@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hook_up_rent/pages/home/info/index.dart';
 import 'package:hook_up_rent/pages/home/tab_search/data_list.dart';
-import 'package:hook_up_rent/pages/room_detail/dart.dart';
 import 'package:hook_up_rent/widgets/common_swiper.dart';
 import 'package:hook_up_rent/widgets/common_tag.dart';
 import 'package:hook_up_rent/widgets/common_title.dart';
@@ -18,27 +17,18 @@ class RoomDetailPage extends StatefulWidget {
 var bottomButtonTextStyle = const TextStyle(color: Colors.white, fontSize: 18);
 
 class _RoomDetailPageState extends State<RoomDetailPage> {
-  late RoomDetailData data;
   bool isLike = false; // 是否收藏
   bool showAllText = false; // 是否展开
 
   @override
-  void initState() {
-    super.initState();
-    setState(() {
-      data = defaultData;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     // 获取通过路由传递过来参数
-    var item = ModalRoute.of(context)!.settings.arguments as RoomListItemData;
-    var showTextTool = data.subTitle.length > 100;
+    final item = ModalRoute.of(context)!.settings.arguments as RoomListItemData;
+    final showTextTool = item.subTitle.length > 100; // 使用 item.subTitle
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('房屋编号：${item.id}'),
+        title: Text(item.title), // 使用 item.title 作为 AppBar 标题，或者保持 item.id
         actions: [
           IconButton(
             onPressed: () => Share.share('https://www.baidu.com'),
@@ -50,19 +40,19 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         children: [
           ListView(
             children: [
-              CommonSwiper(images: data.houseImgs),
-              CommonTitle(data.title),
+              CommonSwiper(images: [item.imageUrl]), // 使用 item.imageUrl
+              CommonTitle(item.title), // 使用 item.title
               Container(
                 padding: const EdgeInsets.only(left: 10),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      data.price.toString(),
+                      item.price.toString(), // 使用 item.price
                       style: const TextStyle(fontSize: 20, color: Colors.pink),
                     ),
                     const Text(
-                      '元/月(押一付三)',
+                      '元/月', // 简化租金描述，因为 RoomListItemData 没有押付信息
                       style: TextStyle(fontSize: 14, color: Colors.pink),
                     ),
                   ],
@@ -72,7 +62,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                 padding: const EdgeInsets.only(left: 10, top: 6, bottom: 6),
                 child: Wrap(
                   spacing: 4,
-                  children: data.tags.map((item) => CommonTag(item)).toList(),
+                  children: item.tags.map((tag) => CommonTag(tag)).toList(), // 使用 item.tags
                 ),
               ),
               const Divider(color: Colors.grey, indent: 10, endIndent: 10),
@@ -81,21 +71,21 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                 child: Wrap(
                   runSpacing: 10,
                   children: [
-                    BaseInfoItem('面积：${data.size}平方米'),
-                    BaseInfoItem('楼层：${data.floor}'),
-                    BaseInfoItem('户型：${data.roomType}'),
-                    const BaseInfoItem('装修：精装'),
+                    const BaseInfoItem('面积：暂无数据'), // RoomListItemData 没有 size
+                    const BaseInfoItem('楼层：详见描述'), // RoomListItemData 没有独立的 floor
+                    const BaseInfoItem('户型：详见描述'), // RoomListItemData 没有独立的 roomType
+                    const BaseInfoItem('装修：精装'), // 假设默认精装，或可考虑移除/设为暂无
                   ],
                 ),
               ),
               const CommonTitle('房屋配置'),
-              RoomApplicanceList(data.applicances),
+              RoomApplicanceList(const []), // RoomListItemData 没有 applicances
               const CommonTitle('房屋概况'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Column(
                   children: [
-                    Text(data.subTitle, maxLines: showAllText ? 5 : null),
+                    Text(item.subTitle, maxLines: showAllText ? null : 5), // 使用 item.subTitle, 调整 maxLines 逻辑
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -106,17 +96,22 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                             }),
                             child: Row(
                               children: [
-                                Text(showTextTool ? '展开' : '收起'),
+                                Text(showAllText ? '收起' : '展开'), // 调整展开/收起文本
                                 Icon(showAllText
-                                    ? Icons.keyboard_arrow_down
-                                    : Icons.keyboard_arrow_up)
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down) // 调整图标
                               ],
                             ),
                           )
                         else
-                          Container(),
-                        GestureDetector(
-                            onTap: () => Navigator.pushNamed(context, 'test'),
+                          Container(), // 保留占位，避免布局跳动
+                        TextButton( // 使用 TextButton 增加点击区域和视觉反馈
+                            onPressed: () {
+                              // TODO: 实现举报功能或导航到举报页面
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('举报功能暂未实现')),
+                              );
+                            },
                             child: const Text('举报')),
                       ],
                     )
