@@ -1435,8 +1435,8 @@ List<GeneralType> priceList = [
 ];
 List<GeneralType> rentTypeList = [
   GeneralType('不限', 'rent_type_any'),
-  GeneralType('整租', 'whole'),
-  GeneralType('合租', 'share'),
+  GeneralType('整租', '整租'),
+  GeneralType('合租', '合租'),
 ];
 List<GeneralType> roomTypeList = [
   GeneralType('房屋类型1', '11'),

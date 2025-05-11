@@ -40,19 +40,21 @@ class _TabSearchState extends State<TabSearch> {
 
     // 确保 '整租' 页面默认筛选 rentType，除非已被其他筛选覆盖
     // Room.js 定义 rentType 是必需的，所以这里确保它存在
-    if (apiParams['rentType'] == null || (apiParams['rentType'] as String).isEmpty) {
-       // 如果 FilterBarResult 中没有 rentType，或者为空，则默认为 '整租'
-       // 如果 FilterBarResult 中有 rentType 且不为空，则使用 FilterBarResult 中的值
-       // 这里的逻辑是，如果用户通过筛选明确选择了其他 rentType，则使用用户的选择
-       // 如果用户没有通过筛选选择 rentType（例如清除了筛选），则默认为 '整租'
-       // 或者，如果 _currentFilterParams 本身就是 null (初始加载)，也默认为 '整租'
-      if (_currentFilterParams == null || _currentFilterParams?.rentTypeId == null || _currentFilterParams!.rentTypeId!.isEmpty || _currentFilterParams!.rentTypeId == 'rent_type_any') {
+    // 仅当 FilterBar 没有提供 rentType (例如初始加载，或 FilterBarResult.rentTypeId 为 null/empty)
+    // 并且用户没有在 FilterBar 中明确选择 "不限" (rent_type_any) 时，才默认设置为 '整租'。
+    // 如果用户在 FilterBar 中选择了 "不限"，则 apiParams['rentType'] 应该保持为 null，以便后端返回所有类型。
+    if (!apiParams.containsKey('rentType')) { // 如果 toMap() 没有设置 rentType (即用户选了 "不限" 或 rentTypeId 为空)
+      if (_currentFilterParams == null || // 初始加载
+          _currentFilterParams?.rentTypeId == null || // rentTypeId 为空
+          _currentFilterParams!.rentTypeId!.isEmpty) { // rentTypeId 为空字符串
+        // 在这些情况下，我们才默认设置为 '整租'
         apiParams['rentType'] = '整租';
       }
-      // 如果 _currentFilterParams.rentTypeId 有具体值 (不是 'rent_type_any' 且不为空),
-      // 那么 toMap() 已经将其加入 apiParams，这里不需要再覆盖。
+      // 如果 _currentFilterParams.rentTypeId == 'rent_type_any'，
+      // 那么 toMap() 不会设置 apiParams['rentType']，这里也不应该设置，从而实现 "不限" 的效果。
     }
 
+print('[TabSearch] Final apiParams for /api/rooms: $apiParams');
 
     try {
       final response = await DioHttp.of(context).get(
