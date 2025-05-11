@@ -25,6 +25,7 @@ class _RoomAddPageState extends State<RoomAddPage> {
 
   var titleController = TextEditingController(); // 描述
   var descController = TextEditingController(); // 描述
+  var communityController = TextEditingController(); // 小区
 
   @override
   Widget build(BuildContext context) {
@@ -39,26 +40,8 @@ class _RoomAddPageState extends State<RoomAddPage> {
           const CommonTitle('房源信息'),
           CommonFormItem(
             label: '小区',
-            contentBuilder: (context) {
-              return GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () {
-                  Navigator.pushNamed(context, 'search');
-                },
-                child: SizedBox(
-                  height: 40,
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Text(
-                          '请选择小区',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        Icon(Icons.keyboard_arrow_right)
-                      ]),
-                ),
-              );
-            },
+            hintText: '请输入小区名称',
+            controller: communityController,
           ),
           CommonFormItem(
             label: '租金',
