@@ -25,8 +25,8 @@ class FilterBarResult {
     Map<String, dynamic> map = {};
     if (cityId != null && cityId!.isNotEmpty) map['city'] = cityId;
     if (districtId != null && districtId!.isNotEmpty) map['district'] = districtId;
-    if (rentTypeId != null && rentTypeId!.isNotEmpty) map['rentType'] = rentTypeId;
-    if (priceId != null && priceId!.isNotEmpty) map['price'] = priceId;
+    if (rentTypeId != null && rentTypeId!.isNotEmpty && rentTypeId!.toLowerCase() != '不限') map['rentType'] = rentTypeId; // 确保 "不限" 不被发送
+    if (priceId != null && priceId!.isNotEmpty && priceId!.toLowerCase() != '不限') map['priceRange'] = priceId; // 修改 'price' 为 'priceRange'，并确保 "不限" 不被发送
     if (roomTypeIds != null && roomTypeIds!.isNotEmpty) map['roomType'] = roomTypeIds!.join(',');
     if (orientationIds != null && orientationIds!.isNotEmpty) map['orientation'] = orientationIds!.join(',');
     if (floorIds != null && floorIds!.isNotEmpty) map['floor'] = floorIds!.join(',');
