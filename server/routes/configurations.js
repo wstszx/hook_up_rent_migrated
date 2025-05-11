@@ -4,11 +4,12 @@ const router = express.Router();
 // 引入筛选选项模型
 const CityOption = require('../models/CityOption');
 const RentTypeOption = require('../models/RentTypeOption');
-const RoomTypeOption = require('../models/RoomTypeOption');
-const OrientationOption = require('../models/OrientationOption');
-const FloorOption = require('../models/FloorOption');
+// const RoomTypeOption = require('../models/RoomTypeOption'); // 不再需要
+// const OrientationOption = require('../models/OrientationOption'); // 不再需要
+// const FloorOption = require('../models/FloorOption'); // 不再需要
 const PriceRangeOption = require('../models/PriceRangeOption');
 const ProfileButton = require('../models/ProfileButton'); // 引入 ProfileButton 模型
+const Room = require('../models/Room'); // <--- 引入 Room 模型
     
     // GET /api/configurations/profile-buttons - Get all profile function buttons from database
     router.get('/profile-buttons', async (req, res) => {
@@ -34,29 +35,57 @@ const ProfileButton = require('../models/ProfileButton'); // 引入 ProfileButto
       }
     });
 
-// GET /api/configurations/filter-options - 获取所有筛选条件的选项 (从数据库读取)
+// GET /api/configurations/filter-options - 获取所有筛选条件的选项
 router.get('/filter-options', async (req, res) => {
     try {
         const cities = await CityOption.find().sort({ order: 1 });
         const rentTypesFromDB = await RentTypeOption.find().sort({ order: 1 });
-        const roomTypesFromDB = await RoomTypeOption.find().sort({ order: 1 });
-        const orientationsFromDB = await OrientationOption.find().sort({ order: 1 });
-        const floorsFromDB = await FloorOption.find().sort({ order: 1 });
         const priceRanges = await PriceRangeOption.find().sort({ order: 1 });
 
-        // 将从数据库获取的数据转换为前端期望的简单数组格式 (如果适用)
+        // 从 Room 集合动态获取户型、朝向、楼层
+        const roomTypes = await Room.distinct('roomType').exec();
+        const orientations = await Room.distinct('orientation').exec();
+        const floors = await Room.distinct('floor').exec();
+
+        // 对楼层进行排序，尝试按数字大小（如果可能）
+        // 示例排序：["低楼层", "中楼层", "高楼层"] 或 ["1/10层", "2/10层", ...]
+        // 这是一个简化的排序，可能需要根据实际 floor 值的格式进行调整
+        const sortFloors = (floorArray) => {
+            return floorArray.sort((a, b) => {
+                const层Regex = /(\d+)\/(\d+)层/; // 匹配 "数字/数字层"
+                const aMatch = a.match(层Regex);
+                const bMatch = b.match(层Regex);
+
+                if (aMatch && bMatch) {
+                    const aCurrent = parseInt(aMatch[1]);
+                    const bCurrent = parseInt(bMatch[1]);
+                    if (aCurrent !== bCurrent) {
+                        return aCurrent - bCurrent;
+                    }
+                    const aTotal = parseInt(aMatch[2]);
+                    const bTotal = parseInt(bMatch[2]);
+                    return aTotal - bTotal;
+                }
+                // 对于 "低楼层", "中楼层", "高楼层" 等非数字格式，保持原顺序或自定义排序逻辑
+                if (a === "低楼层") return -1;
+                if (b === "低楼层") return 1;
+                if (a === "中楼层" && b === "高楼层") return -1;
+                if (a === "高楼层" && b === "中楼层") return 1;
+                return a.localeCompare(b); // 默认字符串排序
+            });
+        };
+        
+        const sortedFloors = sortFloors(floors.filter(f => f)); // 过滤掉 null 或 undefined 的值
+
         const rentTypes = rentTypesFromDB.map(item => item.name);
-        const roomTypes = roomTypesFromDB.map(item => item.name);
-        const orientations = orientationsFromDB.map(item => item.name);
-        const floors = floorsFromDB.map(item => item.name);
 
         const filterOptionsData = {
-            cities, // cities 已经是期望的格式 {name, districts}
+            cities,
             rentTypes,
-            roomTypes,
-            orientations,
-            floors,
-            priceRanges // priceRanges 已经是期望的格式 {label, value}
+            roomTypes: roomTypes.filter(rt => rt), // 过滤掉 null 或 undefined
+            orientations: orientations.filter(o => o), // 过滤掉 null 或 undefined
+            floors: sortedFloors,
+            priceRanges
         };
         res.json(filterOptionsData);
     } catch (error) {

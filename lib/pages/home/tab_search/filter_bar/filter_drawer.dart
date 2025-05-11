@@ -13,11 +13,11 @@ class FilterDrawer extends StatelessWidget {
     var dataList = model.dataList;
 
     // 获取所有筛选列表
-    var cityList = dataList['cityList'];
-    var districtList = dataList['districtList']; // 注意：这个列表可能依赖于选中的城市
-    var rentTypeList = dataList['rentTypeList'];
-    var priceList = dataList['priceList'];
-    var tagList = dataList['tagList'];
+    // var cityList = dataList['cityList'];
+    // var districtList = dataList['districtList']; // 注意：这个列表可能依赖于选中的城市
+    // var rentTypeList = dataList['rentTypeList']; // 移除
+    // var priceList = dataList['priceList']; // 移除
+    // var tagList = dataList['tagList']; // 移除
     var roomTypeList = dataList['roomTypeList'];
     var orientedList = dataList['orientedList'];
     var floorList = dataList['floorList'];
@@ -46,32 +46,32 @@ class FilterDrawer extends StatelessWidget {
             //     onChange: (id) => model.selectedDistrictId = id,
             //   ),
 
-            const CommonTitle('方式'),
-            if (rentTypeList != null)
-              FilterDrawerItem(
-                list: rentTypeList,
-                // 单选时，selectIds 列表只包含选中的那个 id
-                selectIds: model.selectedRentTypeId != null ? [model.selectedRentTypeId!] : [],
-                onChange: (id) {
-                  // 如果当前点击的已经是选中的，则取消选中 (可选行为)
-                  // if (model.selectedRentTypeId == id) {
-                  //   model.selectedRentTypeId = null;
-                  // } else {
-                  //   model.selectedRentTypeId = id;
-                  // }
-                  model.selectedRentTypeId = id; // 直接设置为选中的ID
-                },
-              ),
+            // const CommonTitle('方式'), // 移除
+            // if (rentTypeList != null) // 移除
+            //   FilterDrawerItem( // 移除
+            //     list: rentTypeList, // 移除
+            //     // 单选时，selectIds 列表只包含选中的那个 id
+            //     selectIds: model.selectedRentTypeId != null ? [model.selectedRentTypeId!] : [], // 移除
+            //     onChange: (id) { // 移除
+            //       // 如果当前点击的已经是选中的，则取消选中 (可选行为)
+            //       // if (model.selectedRentTypeId == id) {
+            //       //   model.selectedRentTypeId = null;
+            //       // } else {
+            //       //   model.selectedRentTypeId = id;
+            //       // }
+            //       model.selectedRentTypeId = id; // 直接设置为选中的ID // 移除
+            //     }, // 移除
+            //   ), // 移除
             
-            const CommonTitle('价格'),
-            if (priceList != null)
-              FilterDrawerItem(
-                list: priceList,
-                selectIds: model.selectedPriceId != null ? [model.selectedPriceId!] : [],
-                onChange: (id) {
-                  model.selectedPriceId = id;
-                },
-              ),
+            // const CommonTitle('价格'), // 移除
+            // if (priceList != null) // 移除
+            //   FilterDrawerItem( // 移除
+            //     list: priceList, // 移除
+            //     selectIds: model.selectedPriceId != null ? [model.selectedPriceId!] : [], // 移除
+            //     onChange: (id) { // 移除
+            //       model.selectedPriceId = id; // 移除
+            //     }, // 移除
+            //   ), // 移除
 
             const CommonTitle('户型'),
             if (roomTypeList != null)
@@ -103,15 +103,15 @@ class FilterDrawer extends StatelessWidget {
                 },
               ),
             
-            const CommonTitle('标签'),
-            if (tagList != null)
-              FilterDrawerItem(
-                list: tagList,
-                selectIds: model.selectedTagList.toList(),
-                onChange: (id) {
-                  model.toggleSelectedTagItem(id);
-                },
-              ),
+            // const CommonTitle('标签'), // 移除
+            // if (tagList != null) // 移除
+            //   FilterDrawerItem( // 移除
+            //     list: tagList, // 移除
+            //     selectIds: model.selectedTagList.toList(), // 移除
+            //     onChange: (id) { // 移除
+            //       model.toggleSelectedTagItem(id); // 移除
+            //     }, // 移除
+            //   ), // 移除
             
             // 清除和确认按钮
             Padding(
