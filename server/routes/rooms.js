@@ -225,22 +225,23 @@ router.get('/', async (req, res) => {
 
 
         const page = req.query.page ? parseInt(req.query.page) : 1;
-        const numLimit = limit ? parseInt(limit) : 10;
+        const numLimit = limit ? parseInt(limit) : 0; // 默认0表示不限制
         
-        if (numLimit > 0) {
+        if (numLimit > 0) { // 只有当 limit 大于 0 时才应用分页
             query = query.limit(numLimit);
             if (page > 0) {
                  query = query.skip((page - 1) * numLimit);
             }
         }
+        // 如果 numLimit 为 0 或未提供，则不应用 .limit()，返回所有匹配的文档
         
-        const resultRooms = await query.populate('publisher', 'username _id'); 
-        const totalRooms = await Room.countDocuments(queryConditions); 
+        const resultRooms = await query.populate('publisher', 'username _id');
+        const totalRooms = await Room.countDocuments(queryConditions);
 
         res.json({
             rooms: resultRooms,
             currentPage: page,
-            totalPages: numLimit > 0 ? Math.ceil(totalRooms / numLimit) : 1,
+            totalPages: numLimit > 0 ? Math.ceil(totalRooms / numLimit) : (totalRooms > 0 ? 1 : 0), // 如果不分页，且有数据，则为1页
             totalRooms
         });
 
