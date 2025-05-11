@@ -19,12 +19,16 @@ class FilterBar extends StatefulWidget {
 }
 
 class _FilterBarState extends State<FilterBar> {
-  List<file_data.GeneralType> areaList = [file_data.GeneralType('不限', 'area_any')];
+  List<file_data.GeneralType> areaList = [file_data.GeneralType('不限', 'area_any')]; // 初始的 areaList，主要用于 initState
   List<file_data.GeneralType> priceList = [];
   List<file_data.GeneralType> rentTypeList = [];
   List<file_data.GeneralType> roomTypeList = [];
   List<file_data.GeneralType> orientedList = [];
   List<file_data.GeneralType> floorList = [];
+
+  // 用于 CommonPicker 的动态区域选项列表
+  List<file_data.GeneralType> _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', 'area_any')];
+
 
   bool isAreaActive = false;
   bool isRentTypeActive = false;
@@ -35,6 +39,11 @@ class _FilterBarState extends State<FilterBar> {
   String rentTypeId = 'rent_type_any';
   String priceId = 'price_any';
   List<String> moreIds = [];
+
+  String _areaTitle = '区域';
+  String _rentTypeTitle = '方式';
+  String _priceTitle = '租金';
+  // "筛选" 标题通常是固定的
 
   // 辅助函数：移除城市名称末尾的 "市" 字
   String _normalizeCityName(String cityName) {
@@ -48,7 +57,8 @@ class _FilterBarState extends State<FilterBar> {
     final cityModel = ScopedModelHelper.getModel<CityModel>(context);
     String? currentCityNameFromModel = cityModel.city?.name;
 
-    List<file_data.GeneralType> dynamicAreaOptions; // 用于 CommonPicker 的选项
+    // List<file_data.GeneralType> dynamicAreaOptions; // 用于 CommonPicker 的选项
+    // 使用 _dynamicAreaOptionsForPicker 成员变量
 
     if (currentCityNameFromModel != null && currentCityNameFromModel != '定位中...') {
       String normalizedCurrentCity = _normalizeCityName(currentCityNameFromModel);
@@ -56,37 +66,36 @@ class _FilterBarState extends State<FilterBar> {
         var cityInfo = file_data.cityAreaListData.firstWhere(
           (cityData) => _normalizeCityName(cityData.cityName) == normalizedCurrentCity,
         );
-        // 直接使用 cityInfo.districts，它已经包含了针对该城市的 "不限"
         if (cityInfo.districts.isNotEmpty) {
-          dynamicAreaOptions = List<file_data.GeneralType>.from(cityInfo.districts);
+          _dynamicAreaOptionsForPicker = List<file_data.GeneralType>.from(cityInfo.districts);
         } else {
-          // 如果城市存在但 districts 为空 (例如济源市等)，提供一个该城市特定的“不限”
-          // 或者一个更通用的 'area_any'，取决于产品设计
-          dynamicAreaOptions = [file_data.GeneralType('不限', '${normalizedCurrentCity}_area_any')];
+          _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', '${normalizedCurrentCity}_area_any')];
         }
       } catch (e) {
-        // 如果未找到城市，提供一个通用的“不限”
         print('City not found in cityAreaListData: $currentCityNameFromModel (normalized: $normalizedCurrentCity). Error: $e');
-        dynamicAreaOptions = [file_data.GeneralType('不限', 'area_any')];
+        _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', 'area_any')];
       }
     } else {
-      // 如果城市名为空或正在定位，也提供一个通用的“不限”
-      dynamicAreaOptions = [file_data.GeneralType('不限', 'area_any')];
+      _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', 'area_any')];
     }
     
-    // 确保 dynamicAreaOptions 至少有一个元素，以防万一
-    if (dynamicAreaOptions.isEmpty) {
-        dynamicAreaOptions = [file_data.GeneralType('不限', 'area_any')];
+    if (_dynamicAreaOptionsForPicker.isEmpty) {
+        _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', 'area_any')];
     }
+
+    // 找到当前 areaId 在 _dynamicAreaOptionsForPicker 中的索引
+    int initialIndex = _dynamicAreaOptionsForPicker.indexWhere((item) => item.id == areaId);
+    if (initialIndex == -1) initialIndex = 0; // 如果找不到，默认第一个
+
 
     setState(() {
       isAreaActive = true;
     });
 
     var result = CommonPicker.showPicker(
-      value: 0, // 默认选中第一个
+      value: initialIndex, // 使用计算出的初始索引
       context: context,
-      options: dynamicAreaOptions.map((item) => item.name).toList(),
+      options: _dynamicAreaOptionsForPicker.map((item) => item.name).toList(),
     );
 
     if (result == null) {
@@ -101,11 +110,11 @@ class _FilterBarState extends State<FilterBar> {
       }
       if (mounted) {
         setState(() {
-          // 使用 dynamicAreaOptions 来获取选择的 ID
-          areaId = dynamicAreaOptions[index].id;
+          areaId = _dynamicAreaOptionsForPicker[index].id;
+          _updateTitles(); // 更新标题
         });
       }
-      _onChange(); 
+      _onChange();
     }).whenComplete(() {
       if (mounted) {
         setState(() {
@@ -120,8 +129,12 @@ class _FilterBarState extends State<FilterBar> {
       isRentTypeActive = true;
     });
 
+    // 找到当前 rentTypeId 在 rentTypeList 中的索引
+    int initialIndex = rentTypeList.indexWhere((item) => item.id == rentTypeId);
+    if (initialIndex == -1) initialIndex = 0;
+
     var result = CommonPicker.showPicker(
-      value: 0,
+      value: initialIndex,
       context: context,
       options: rentTypeList.map((item) => item.name).toList(),
     );
@@ -139,6 +152,7 @@ class _FilterBarState extends State<FilterBar> {
       if (mounted) {
         setState(() {
           rentTypeId = rentTypeList[index].id;
+          _updateTitles(); // 更新标题
         });
       }
       _onChange();
@@ -155,8 +169,14 @@ class _FilterBarState extends State<FilterBar> {
     setState(() {
       isPriceActive = true;
     });
+
+    // 找到当前 priceId 在 priceList 中的索引
+    int initialIndex = priceList.indexWhere((item) => item.id == priceId);
+    if (initialIndex == -1) initialIndex = 0;
+
+
     var result = CommonPicker.showPicker(
-        value: 0,
+        value: initialIndex,
         context: context,
         options: priceList.map((item) => item.name).toList());
 
@@ -173,6 +193,7 @@ class _FilterBarState extends State<FilterBar> {
       if (mounted) {
         setState(() {
           priceId = priceList[index].id;
+          _updateTitles(); // 更新标题
         });
       }
       _onChange();
@@ -213,23 +234,44 @@ class _FilterBarState extends State<FilterBar> {
     ScopedModelHelper.getModel<FilterBarModel>(context).dataList = dataList;
   }
 
+  void _updateTitles() {
+    // 更新区域标题
+    // 注意: _dynamicAreaOptionsForPicker 可能在 _onAreaChange 之前未完全根据当前城市初始化。
+    // 但 initState 中会调用 _updateTitles，此时 _dynamicAreaOptionsForPicker 还是初始值。
+    // _onAreaChange 内部会更新 _dynamicAreaOptionsForPicker 并再次调用 _updateTitles。
+    var area = _dynamicAreaOptionsForPicker.firstWhere((item) => item.id == areaId, orElse: () => _dynamicAreaOptionsForPicker.isNotEmpty ? _dynamicAreaOptionsForPicker[0] : file_data.GeneralType('区域', 'area_any'));
+    _areaTitle = (areaId == 'area_any' || area.name == '不限') ? '区域' : area.name;
+
+
+    var rentType = rentTypeList.firstWhere((item) => item.id == rentTypeId, orElse: () => rentTypeList.isNotEmpty ? rentTypeList[0] : file_data.GeneralType('方式', 'rent_type_any'));
+    _rentTypeTitle = (rentTypeId == 'rent_type_any' || rentType.name == '不限') ? '方式' : rentType.name;
+
+    var price = priceList.firstWhere((item) => item.id == priceId, orElse: () => priceList.isNotEmpty ? priceList[0] : file_data.GeneralType('租金', 'price_any'));
+    _priceTitle = (priceId == 'price_any' || price.name == '不限') ? '租金' : price.name;
+  }
+
   @override
   void initState() {
-    super.initState(); 
+    super.initState();
     
     priceList = file_data.priceList;
     rentTypeList = file_data.rentTypeList;
     roomTypeList = file_data.roomTypeList;
     orientedList = file_data.orientedList;
     floorList = file_data.floorList;
+    
+    // 初始化 _dynamicAreaOptionsForPicker 为通用不限，_onAreaChange 会根据城市更新它
+    _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', 'area_any')];
+
 
     // areaId 的初始值依赖 areaList，areaList 的初始值是 [GeneralType('不限', 'area_any')]
     // 这是合理的，因为在用户首次与区域筛选交互前，它应该代表“不限区域”
-    areaId = areaList.isNotEmpty ? areaList[0].id : 'area_any'; 
+    areaId = _dynamicAreaOptionsForPicker.isNotEmpty ? _dynamicAreaOptionsForPicker[0].id : 'area_any';
     rentTypeId = rentTypeList.isNotEmpty ? rentTypeList[0].id : 'rent_type_any';
     priceId = priceList.isNotEmpty ? priceList[0].id : 'price_any';
-
-    Timer.run(_getData); 
+    
+    _updateTitles(); // 初始化标题
+    Timer.run(_getData);
   }
 
   @override
@@ -250,22 +292,22 @@ class _FilterBarState extends State<FilterBar> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           Item(
-            title: '区域',
+            title: _areaTitle, // 使用动态标题
             isActive: isAreaActive,
             onTap: _onAreaChange,
           ),
           Item(
-            title: '方式',
+            title: _rentTypeTitle, // 使用动态标题
             isActive: isRentTypeActive,
             onTap: _onRentTypeChange,
           ),
           Item(
-            title: '租金',
+            title: _priceTitle, // 使用动态标题
             isActive: isPriceActive,
             onTap: _onPriceChange,
           ),
           Item(
-            title: '筛选',
+            title: '筛选', // 筛选标题通常固定
             isActive: isFilterActive,
             onTap: _onFilterChange,
           ),
