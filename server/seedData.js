@@ -469,26 +469,26 @@ function generateRoomData(id, publisherId) {
   let cityName;
   let district;
 
-  // 调整概率，例如 60% 基础城市, 40% faker生成
-  if (Math.random() < 0.6 && baseCities.length > 0) {
-    selectedCityObject = baseCities[Math.floor(Math.random() * baseCities.length)];
-    cityName = selectedCityObject.name;
-    if (selectedCityObject.districts && selectedCityObject.districts.length > 0) {
-      district = selectedCityObject.districts[Math.floor(Math.random() * selectedCityObject.districts.length)];
-    } else {
-      district = faker.location.county() || `${cityName}区`; // 如果基础城市没有区域，随机生成一个
-    }
+  // 修改为100%从 baseCities 中选择城市和区域信息
+  if (baseCities.length === 0) {
+    console.error("错误: baseCities 为空，无法从中选择城市和区域信息。请确保 baseCities 有数据。");
+    // 可以选择返回 null 或抛出异常来中断生成，避免后续错误
+    return null; // 或者 throw new Error("baseCities is empty, cannot proceed.");
+  }
+
+  selectedCityObject = baseCities[Math.floor(Math.random() * baseCities.length)];
+  cityName = selectedCityObject.name;
+
+  if (selectedCityObject.districts && selectedCityObject.districts.length > 0) {
+    district = selectedCityObject.districts[Math.floor(Math.random() * selectedCityObject.districts.length)];
   } else {
-    cityName = faker.location.city();
-    // 为faker生成的城市随机生成一些区
-    const numDistricts = Math.floor(Math.random() * 2) + 1; // 1-2个模拟区
-    const districts = [];
-    for (let i = 0; i < numDistricts; i++) {
-        // 生成更像真实区名的名称
-        districts.push(faker.location.county().replace(/市$/, '区').replace(/县$/, '区') || `${cityName}区${i+1}`);
-    }
-    district = districts[Math.floor(Math.random() * districts.length)];
-    // selectedCityObject = { name: cityName, districts: districts }; // 用于后续, 但当前未使用
+    // 如果 baseCities 中的城市明确没有 districts (例如一些市辖区为空的城市，如“济源市”或“东莞市”)
+    // 并且业务逻辑允许区为空或者等于城市名，则可以这样处理。
+    // 否则，这可能表示 baseCities 数据本身不完整，或者需要为这些城市补充空的 districts 数组。
+    // 当前的行为是将区名设置为城市名，并打印警告。
+    // 如果业务上区是必需的，且不能等于城市名，这里应该调整逻辑或报错。
+    district = cityName; // 或者 district = null; 根据业务需求
+    console.warn(`警告: 城市 "${cityName}" 在 baseCities 中没有提供区域信息或区域信息为空，已使用城市名 "${district}" 作为区名。`);
   }
 
   const rooms = Math.floor(Math.random() * 3) + 1; // 1到3室
@@ -597,7 +597,7 @@ const seedDatabase = async () => {
       console.log('默认发布者用户已存在:', publisher.username);
     }
 
-    const numberOfRooms = 1000; // 生成1000条房源数据
+    const numberOfRooms = 3000; // 生成3000条房源数据
     const roomsToCreate = [];
 
     console.log(`准备生成 ${numberOfRooms} 条房源数据...`);
