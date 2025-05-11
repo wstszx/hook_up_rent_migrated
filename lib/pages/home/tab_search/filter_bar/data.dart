@@ -23,16 +23,26 @@ class GeneralType {
 }
 
 List<GeneralType> areaList = [
-  GeneralType('区域1', '11'),
-  GeneralType('区域2', '22'),
+  GeneralType('不限', 'area_any'), // "不限" 选项通常是需要的
+  GeneralType('开福区', 'kf'),
+  GeneralType('岳麓区', 'yl'),
+  GeneralType('天心区', 'tx'),
+  GeneralType('雨花区', 'yh'),
+  GeneralType('芙蓉区', 'fr'),
 ];
 List<GeneralType> priceList = [
-  GeneralType('价格1', '22'),
-  GeneralType('价格2', 'aa'),
+  GeneralType('不限', 'price_any'),
+  GeneralType('1000及以下', '0-1000'),
+  GeneralType('1000-2000', '1000-2000'),
+  GeneralType('2000-3000', '2000-3000'),
+  GeneralType('3000-4000', '3000-4000'),
+  GeneralType('4000-5000', '4000-5000'),
+  GeneralType('5000以上', '5000-'),
 ];
 List<GeneralType> rentTypeList = [
-  GeneralType('出租类型1', 'bb'),
-  GeneralType('出租类型2', '22'),
+  GeneralType('不限', 'rent_type_any'),
+  GeneralType('整租', 'whole'),
+  GeneralType('合租', 'share'),
 ];
 List<GeneralType> roomTypeList = [
   GeneralType('房屋类型1', '11'),
