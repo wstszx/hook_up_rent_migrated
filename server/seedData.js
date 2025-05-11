@@ -464,31 +464,18 @@ function generatePropertyDescription(district, rooms, area, features) {
 // --- 核心数据生成和插入逻辑 ---
 
 // 生成随机房源并映射到Room模型
-function generateRoomData(id, publisherId) {
-  let selectedCityObject;
-  let cityName;
-  let district;
+// 生成随机房源并映射到Room模型
+// 修改: 接收 specificCityName 和 specificDistrictName 以确保覆盖性
+function generateRoomData(id, publisherId, specificCityName, specificDistrictName) {
+  let cityName = specificCityName;
+  let district = specificDistrictName;
 
-  // 修改为100%从 baseCities 中选择城市和区域信息
-  if (baseCities.length === 0) {
-    console.error("错误: baseCities 为空，无法从中选择城市和区域信息。请确保 baseCities 有数据。");
-    // 可以选择返回 null 或抛出异常来中断生成，避免后续错误
-    return null; // 或者 throw new Error("baseCities is empty, cannot proceed.");
-  }
-
-  selectedCityObject = baseCities[Math.floor(Math.random() * baseCities.length)];
-  cityName = selectedCityObject.name;
-
-  if (selectedCityObject.districts && selectedCityObject.districts.length > 0) {
-    district = selectedCityObject.districts[Math.floor(Math.random() * selectedCityObject.districts.length)];
-  } else {
-    // 如果 baseCities 中的城市明确没有 districts (例如一些市辖区为空的城市，如“济源市”或“东莞市”)
-    // 并且业务逻辑允许区为空或者等于城市名，则可以这样处理。
-    // 否则，这可能表示 baseCities 数据本身不完整，或者需要为这些城市补充空的 districts 数组。
-    // 当前的行为是将区名设置为城市名，并打印警告。
-    // 如果业务上区是必需的，且不能等于城市名，这里应该调整逻辑或报错。
-    district = cityName; // 或者 district = null; 根据业务需求
-    console.warn(`警告: 城市 "${cityName}" 在 baseCities 中没有提供区域信息或区域信息为空，已使用城市名 "${district}" 作为区名。`);
+  // 确保 selectedCityObject 仍然被查找，以便 generateCoordinates 和其他逻辑可以复用
+  // 但城市和区域的最终选择由传入参数决定
+  const selectedCityObject = baseCities.find(c => c.name === cityName);
+  if (!selectedCityObject) {
+      console.warn(`警告: 城市 "${cityName}" 未在 baseCities 中找到，某些依赖此查找的逻辑可能受影响。`);
+      // 如果找不到城市对象，坐标生成将退回到完全随机，地址可能不那么精确
   }
 
   const rooms = Math.floor(Math.random() * 3) + 1; // 1到3室
@@ -556,7 +543,7 @@ function generateRoomData(id, publisherId) {
     description,
     price,
     city: cityName,
-    district: district || cityName, // 如果没有区，则使用城市名
+    district: district, // 直接使用传入的 district
     address,
     rentType,
     roomType: roomTypeString,
@@ -597,15 +584,49 @@ const seedDatabase = async () => {
       console.log('默认发布者用户已存在:', publisher.username);
     }
 
-    const numberOfRooms = 3000; // 生成3000条房源数据
+    const numberOfRooms = 10000; // 修改为生成10000条房源数据
     const roomsToCreate = [];
 
-    console.log(`准备生成 ${numberOfRooms} 条房源数据...`);
-    for (let i = 0; i < numberOfRooms; i++) {
-      roomsToCreate.push(generateRoomData(i.toString(), publisher._id));
+    const cityDistrictPairs = [];
+    baseCities.forEach(city => {
+        if (city.districts && city.districts.length > 0) {
+            city.districts.forEach(dist => { // Renamed district to dist to avoid conflict
+                cityDistrictPairs.push({ cityName: city.name, districtName: dist });
+            });
+        } else {
+            // 对于没有区的城市 (如东莞、中山、济源等，或districts为空数组的)
+            // 我们仍然为这个城市生成数据，districtName 可以设为城市名本身或留空/特定标识
+            // Room模型中district字段不是必需的，但为了数据一致性，这里设为城市名
+            cityDistrictPairs.push({ cityName: city.name, districtName: city.name });
+            // console.warn(`提示: 城市 "${city.name}" 在 baseCities 中没有提供区域信息或区域列表为空，将使用城市名 "${city.name}" 作为区名进行覆盖生成。`);
+        }
+    });
+
+    if (cityDistrictPairs.length === 0 && baseCities.length > 0) {
+        // 如果 baseCities 有内容，但 cityDistrictPairs 为空（例如所有城市都没有districts且上面的逻辑未处理）
+        // 这是一个不太可能发生的情况，除非 baseCities 的结构非常特殊且未被正确处理
+        console.error("错误: cityDistrictPairs 为空，但 baseCities 仍有数据。无法确保区域覆盖。请检查 baseCities 结构和处理逻辑。");
+        mongoose.disconnect();
+        return;
+    } else if (cityDistrictPairs.length === 0 && baseCities.length === 0) {
+        console.error("错误: baseCities 为空，无法生成任何房源数据。");
+        mongoose.disconnect();
+        return;
     }
 
-    console.log('开始插入房源数据...');
+
+    console.log(`准备生成 ${numberOfRooms} 条房源数据，将尝试覆盖 ${cityDistrictPairs.length} 个城市-区域组合...`);
+    let pairIndex = 0;
+    for (let i = 0; i < numberOfRooms; i++) {
+      const { cityName, districtName } = cityDistrictPairs[pairIndex];
+      const roomData = generateRoomData(i.toString(), publisher._id, cityName, districtName);
+      if (roomData) { // 确保 generateRoomData 总是返回有效数据
+          roomsToCreate.push(roomData);
+      }
+      pairIndex = (pairIndex + 1) % cityDistrictPairs.length; // 循环使用城市区域组合
+    }
+
+    console.log(`已准备 ${roomsToCreate.length} 条房源数据待插入。开始插入房源数据...`);
     await Room.insertMany(roomsToCreate);
     console.log(`${numberOfRooms} 条房源数据已成功插入数据库！`);
 
