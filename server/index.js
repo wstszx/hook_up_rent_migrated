@@ -37,6 +37,7 @@ app.use(express.json());
 // process.cwd() 是项目根目录 (d:/flutterProject/hook_up_rent_migrated)
 // 我们希望 uploads 目录在 server 文件夹下
 app.use('/uploads', express.static(path.join(process.cwd(), 'server/uploads')));
+app.use('/static', express.static(path.join(process.cwd(), 'static'))); // 新增：为根目录下的 static 文件夹提供服务
 
 
 // 根路由 (可选，用于测试服务器是否在线)
@@ -103,29 +104,35 @@ const seedDatabase = async () => {
         if (recommendationCount === 0) {
             console.log('Seeding recommendations...');
             await Recommendation.create([
+              // 长沙的推荐数据
+              {
+                title: '岳麓山下好风光',
+                subTitle: '长沙宜居新选择',
+                imageUrl: 'static/images/home_index_recommend_1.png',
+                navigateUrl: '/search?city=长沙',
+                city: '长沙'
+              },
+              {
+                title: '橘子洲头江景房',
+                subTitle: '品味星城韵味',
+                imageUrl: 'static/images/home_index_recommend_2.png',
+                navigateUrl: '/search?city=长沙',
+                city: '长沙'
+              },
+              // 北京的推荐数据
               {
                 title: '家住回龙观',
                 subTitle: '归属的感觉',
-                imageUrl: 'static/images/home_index_recommend_1.png',
-                navigateUrl: '/search'
+                imageUrl: 'static/images/home_index_recommend_3.png',
+                navigateUrl: '/search?city=北京',
+                city: '北京'
               },
               {
                 title: '宜居四五环',
                 subTitle: '大都市生活',
-                imageUrl: 'static/images/home_index_recommend_2.png',
-                navigateUrl: '/search'
-              },
-              {
-                title: '喧嚣三里屯',
-                subTitle: '繁华的背后',
-                imageUrl: 'static/images/home_index_recommend_3.png',
-                navigateUrl: '/search'
-              },
-              {
-                title: '比邻十号线',
-                subTitle: '地铁心连心',
                 imageUrl: 'static/images/home_index_recommend_4.png',
-                navigateUrl: '/search'
+                navigateUrl: '/search?city=北京',
+                city: '北京'
               }
             ]);
         }

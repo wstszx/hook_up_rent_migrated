@@ -52,9 +52,9 @@ router.get('/filter-options', async (req, res) => {
         // 这是一个简化的排序，可能需要根据实际 floor 值的格式进行调整
         const sortFloors = (floorArray) => {
             return floorArray.sort((a, b) => {
-                const层Regex = /(\d+)\/(\d+)层/; // 匹配 "数字/数字层"
-                const aMatch = a.match(层Regex);
-                const bMatch = b.match(层Regex);
+                const floorRegex = /(\d+)\/(\d+)层/; // 匹配 "数字/数字层"
+                const aMatch = a.match(floorRegex);
+                const bMatch = b.match(floorRegex);
 
                 if (aMatch && bMatch) {
                     const aCurrent = parseInt(aMatch[1]);
