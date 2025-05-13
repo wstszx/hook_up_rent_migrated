@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 // 引入筛选选项模型
-const CityOption = require('../models/CityOption');
+// const CityOption = require('../models/CityOption'); // Replaced with CityDistrict
+const CityDistrict = require('../models/CityDistrict'); // Added CityDistrict model
 const RentTypeOption = require('../models/RentTypeOption');
 // const RoomTypeOption = require('../models/RoomTypeOption'); // 不再需要
 // const OrientationOption = require('../models/OrientationOption'); // 不再需要
@@ -38,7 +39,10 @@ const Room = require('../models/Room'); // <--- 引入 Room 模型
 // GET /api/configurations/filter-options - 获取所有筛选条件的选项
 router.get('/filter-options', async (req, res) => {
     try {
-        const cities = await CityOption.find().sort({ order: 1 });
+        // Fetch cities from the CityDistrict collection
+        // Assuming no specific order field in CityDistrict, remove .sort({ order: 1 })
+        // If sorting is needed (e.g., by name), add .sort({ name: 1 }) or similar.
+        const cities = await CityDistrict.find();
         const rentTypesFromDB = await RentTypeOption.find().sort({ order: 1 });
         const priceRanges = await PriceRangeOption.find().sort({ order: 1 });
 

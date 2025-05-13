@@ -12,7 +12,7 @@ const Recommendation = require('./models/Recommendation'); // 引入 Recommendat
 const ProfileButton = require('./models/ProfileButton'); // 引入 ProfileButton 模型
 const NewsItem = require('./models/NewsItem'); // 引入 NewsItem 模型
 const IndexNavigatorItem = require('./models/IndexNavigatorItem'); // 引入 IndexNavigatorItem 模型
-const CityOption = require('./models/CityOption');
+// const CityOption = require('./models/CityOption'); // Removed CityOption
 const RentTypeOption = require('./models/RentTypeOption');
 const RoomTypeOption = require('./models/RoomTypeOption');
 const OrientationOption = require('./models/OrientationOption');
@@ -63,16 +63,17 @@ const seedDatabase = async () => {
         const profileButtonCount = await ProfileButton.countDocuments();
         const newsItemCount = await NewsItem.countDocuments();
         const indexNavigatorItemCount = await IndexNavigatorItem.countDocuments();
-        const cityOptionCount = await CityOption.countDocuments();
+        // const cityOptionCount = await CityOption.countDocuments(); // Removed CityOption count
         const rentTypeOptionCount = await RentTypeOption.countDocuments();
         const roomTypeOptionCount = await RoomTypeOption.countDocuments();
         const orientationOptionCount = await OrientationOption.countDocuments();
         const floorOptionCount = await FloorOption.countDocuments();
         const priceRangeOptionCount = await PriceRangeOption.countDocuments();
 
+        // Removed cityOptionCount from the seeding check condition
         if (userCount > 0 && roomCount > 0 && recommendationCount > 0 && profileButtonCount > 0 && newsItemCount > 0 && indexNavigatorItemCount > 0 &&
-            cityOptionCount > 0 && rentTypeOptionCount > 0 && roomTypeOptionCount > 0 && orientationOptionCount > 0 && floorOptionCount > 0 && priceRangeOptionCount > 0) {
-            console.log('Database collections (Users, Rooms, Recommendations, ProfileButtons, NewsItems, IndexNavigatorItems, FilterOptions) appear to be seeded. Skipping...');
+            rentTypeOptionCount > 0 && roomTypeOptionCount > 0 && orientationOptionCount > 0 && floorOptionCount > 0 && priceRangeOptionCount > 0) {
+            console.log('Database collections (Users, Rooms, Recommendations, ProfileButtons, NewsItems, IndexNavigatorItems, relevant FilterOptions) appear to be seeded. Skipping...');
             return;
         }
         
@@ -176,13 +177,14 @@ const seedDatabase = async () => {
         }
 
         // 创建筛选选项数据
-        if (cityOptionCount === 0) {
-            console.log('Seeding city options...');
-            await CityOption.create([
-                { name: "长沙", districts: ["不限", "岳麓区", "开福区", "雨花区", "天心区", "芙蓉区", "望城区", "长沙县", "浏阳市", "宁乡市"], order: 1 },
-                { name: "北京", districts: ["不限", "朝阳区", "海淀区", "东城区", "西城区", "丰台区", "石景山区", "门头沟区", "房山区", "通州区", "顺义区", "昌平区", "大兴区", "怀柔区", "平谷区", "密云区", "延庆区"], order: 2 }
-            ]);
-        }
+        // Removed CityOption seeding block
+        // if (cityOptionCount === 0) {
+        //     console.log('Seeding city options...');
+        //     await CityOption.create([
+        //         { name: "长沙", districts: ["不限", "岳麓区", "开福区", "雨花区", "天心区", "芙蓉区", "望城区", "长沙县", "浏阳市", "宁乡市"], order: 1 },
+        //         { name: "北京", districts: ["不限", "朝阳区", "海淀区", "东城区", "西城区", "丰台区", "石景山区", "门头沟区", "房山区", "通州区", "顺义区", "昌平区", "大兴区", "怀柔区", "平谷区", "密云区", "延庆区"], order: 2 }
+        //     ]);
+        // }
         if (rentTypeOptionCount === 0) {
             console.log('Seeding rent type options...');
             await RentTypeOption.create([
