@@ -21,22 +21,39 @@ class _TabSearchState extends State<TabSearch> {
   List<RoomListItemData> _roomList = [];
   bool _isLoading = true;
   filter_data.FilterBarResult? _currentFilterParams; // 用于存储当前的筛选参数
+  String _currentSearchWord = ''; // 用于存储当前搜索词
 
   @override
   void initState() {
     super.initState();
-    // 初始加载时 _currentFilterParams 为 null，_fetchRoomsData 会处理默认参数
-    // _fetchRoomsData();
-    // 使用 addPostFrameCallback 确保 CityModel 初始化和 context 可用
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _fetchRoomsData();
+        // didChangeDependencies 会处理初始的 searchWord
+        // _fetchRoomsData(); // 移除这里的直接调用，让 didChangeDependencies 控制首次加载
       }
     });
   }
 
-  Future<void> _fetchRoomsData() async {
-    if (!mounted) return; // 如果 widget 已卸载，则不执行
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 获取路由参数
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final String? initialSearchWord = arguments?['searchWord'] as String?;
+
+    if (initialSearchWord != null && initialSearchWord.isNotEmpty) {
+      setState(() {
+        _currentSearchWord = initialSearchWord;
+      });
+    }
+    // 无论是否有初始搜索词，都获取一次数据
+    // 如果有搜索词，_fetchRoomsData 会使用它
+    // 如果没有，_fetchRoomsData 会按现有逻辑（筛选条件、默认城市）获取
+    _fetchRoomsData(searchWord: _currentSearchWord);
+  }
+
+  Future<void> _fetchRoomsData({String? searchWord}) async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -47,40 +64,33 @@ class _TabSearchState extends State<TabSearch> {
       apiParams = _currentFilterParams!.toMap();
     }
 
-    // --- 新增：确保初始加载时有城市参数 ---
-    // 检查 apiParams 中是否已经有有效的 city 值 (来自 FilterBarResult)
+    // 添加搜索词到 API 参数
+    if (searchWord != null && searchWord.isNotEmpty) {
+      apiParams['q'] = searchWord; // 假设后端用 'q' 作为搜索查询参数
+    }
+
     final cityFromFilter = apiParams['city'] as String?;
     if (cityFromFilter == null || cityFromFilter.isEmpty || cityFromFilter.toLowerCase() == '不限') {
-      // 如果 FilterBarResult 没有提供有效城市，则尝试从 CityModel 获取
       final cityModel = ScopedModel.of<CityModel>(context, rebuildOnChange: false);
       if (cityModel.city != null && cityModel.city!.id.isNotEmpty) {
         apiParams['city'] = cityModel.city!.id;
       }
     }
-    // --- 结束新增逻辑 ---
 
-    // 确保 '整租' 页面默认筛选 rentType，除非已被其他筛选覆盖
-    // Room.js 定义 rentType 是必需的，所以这里确保它存在
-    // 仅当 FilterBar 没有提供 rentType (例如初始加载，或 FilterBarResult.rentTypeId 为 null/empty)
-    // 并且用户没有在 FilterBar 中明确选择 "不限" (rent_type_any) 时，才默认设置为 '整租'。
-    // 如果用户在 FilterBar 中选择了 "不限"，则 apiParams['rentType'] 应该保持为 null，以便后端返回所有类型。
-    if (!apiParams.containsKey('rentType')) { // 如果 toMap() 没有设置 rentType (即用户选了 "不限" 或 rentTypeId 为空)
-      if (_currentFilterParams == null || // 初始加载
-          _currentFilterParams?.rentTypeId == null || // rentTypeId 为空
-          _currentFilterParams!.rentTypeId!.isEmpty) { // rentTypeId 为空字符串
-        // 在这些情况下，我们才默认设置为 '整租'
+    if (!apiParams.containsKey('rentType')) {
+      if (_currentFilterParams == null ||
+          _currentFilterParams?.rentTypeId == null ||
+          _currentFilterParams!.rentTypeId!.isEmpty) {
         apiParams['rentType'] = '整租';
       }
-      // 如果 _currentFilterParams.rentTypeId == 'rent_type_any'，
-      // 那么 toMap() 不会设置 apiParams['rentType']，这里也不应该设置，从而实现 "不限" 的效果。
     }
     
-    // print('[TabSearch] Final apiParams for /api/rooms: $apiParams'); // 移除调试日志
+    // print('[TabSearch] Final apiParams for /api/rooms: $apiParams');
 
     try {
       final response = await DioHttp.of(context).get(
         '/api/rooms',
-        apiParams, // 使用动态构建的参数
+        apiParams,
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -89,7 +99,6 @@ class _TabSearchState extends State<TabSearch> {
         
         final List<RoomListItemData> fetchedRooms = roomsData.map((item) {
           var room = item as Map<String, dynamic>;
-          // 构造 subTitle
           String subTitle = "${room['roomType'] ?? ''}";
           if (room['floor'] != null && room['floor'].isNotEmpty) {
             subTitle += "/${room['floor']}";
@@ -104,14 +113,13 @@ class _TabSearchState extends State<TabSearch> {
             subTitle += " ${room['address']}";
           }
 
-          // 处理图片 URL
-          String imageUrl = Config.DefaultImage; // 默认图片
+          String imageUrl = Config.DefaultImage;
           if (room['images'] != null && (room['images'] as List).isNotEmpty) {
             String rawImageUrl = (room['images'] as List)[0] as String;
             if (rawImageUrl.startsWith('/')) {
               imageUrl = Config.BaseUrl + rawImageUrl;
             } else {
-              imageUrl = rawImageUrl; // 假定已经是完整 URL
+              imageUrl = rawImageUrl;
             }
           }
           
@@ -125,22 +133,29 @@ class _TabSearchState extends State<TabSearch> {
           );
         }).toList();
 
-        setState(() {
-          _roomList = fetchedRooms;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _roomList = fetchedRooms;
+            _isLoading = false;
+          });
+        }
       } else {
-        // Handle error or empty response
         print('Failed to load rooms: ${response.statusCode}');
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _roomList = []; // 清空列表以防显示旧数据
+          });
+        }
       }
     } catch (e) {
       print('Error fetching rooms: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _roomList = []; // 清空列表
+        });
+      }
     }
   }
 
@@ -149,27 +164,32 @@ class _TabSearchState extends State<TabSearch> {
     return Scaffold(
       endDrawer: const FilterDrawer(),
       appBar: AppBar(
-        actions: [Container()], // 去除 endDrawer 的默认按钮
+        actions: [Container()],
         elevation: 0,
         title: custom.SearchBar(
           showLocation: true,
           showMap: true,
-          inputValue: '',
-          onSearch: () {
-            Navigator.of(context).pushNamed('search');
+          inputValue: _currentSearchWord, // 绑定到当前搜索词
+          // onSearch: null, // 在搜索页，点击搜索框不应再导航
+          onSearchSubmit: (String value) {
+            setState(() {
+              _currentSearchWord = value;
+            });
+            _fetchRoomsData(searchWord: value); // 使用新搜索词获取数据
           },
         ),
       ),
       body: Column(
         children: [
           SizedBox(
-            height: 41, // FilterBar 的固定高度
+            height: 41,
             child: FilterBar(
               onChange: (filter_data.FilterBarResult result) {
                 setState(() {
                   _currentFilterParams = result;
                 });
-                _fetchRoomsData(); // 当筛选条件改变时，重新获取数据
+                // 当筛选条件改变时，也带上当前的搜索词
+                _fetchRoomsData(searchWord: _currentSearchWord);
               },
             ),
           ),

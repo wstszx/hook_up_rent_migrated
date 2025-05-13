@@ -17,8 +17,11 @@ class TabIndex extends StatelessWidget {
           showLocation: true,
           showMap: true,
           inputValue: '',
-          onSearch: () {
+          onSearch: () { // 点击整个搜索框区域，直接跳转到搜索页
             Navigator.of(context).pushNamed('search');
+          },
+          onSearchSubmit: (String value) { // 输入后点击键盘搜索按钮
+            Navigator.of(context).pushNamed('search', arguments: {'searchWord': value});
           },
         ),
       ),

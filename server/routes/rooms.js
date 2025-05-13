@@ -126,13 +126,28 @@ router.get('/', async (req, res) => {
     try {
         const {
             city, district, rentType, priceRange, roomType, orientation, floor,
-            minPrice, maxPrice, 
+            minPrice, maxPrice,
             limit, sortBy, sortOrder, publishedSince, tags,
             // 新增地理位置查询参数
-            longitude, latitude, maxDistance // maxDistance in meters
+            longitude, latitude, maxDistance, // maxDistance in meters
+            q // <--- 新增 q 参数用于文本搜索
         } = req.query;
         
         let queryConditions = {};
+
+        // 文本搜索 (如果提供了 q 参数)
+        if (q && q.trim() !== '') {
+            // 转义正则表达式中的特殊字符，并使其不区分大小写
+            const searchRegex = new RegExp(q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+            queryConditions.$or = [
+                { title: searchRegex },
+                { description: searchRegex },
+                { address: searchRegex }, // 假设 address 也是一个可以搜索的文本字段
+                { district: searchRegex }, // 假设 district 也是一个可以搜索的文本字段
+                // 对于 tags (如果是数组), MongoDB 的 $regex 可以直接用于数组字段，它会检查数组中是否有任何元素匹配该正则
+                { tags: searchRegex }
+            ];
+        }
 
         // 地理位置查询 (如果提供了经纬度)
         if (longitude !== undefined && latitude !== undefined) {

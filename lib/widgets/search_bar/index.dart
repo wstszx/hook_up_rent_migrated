@@ -355,14 +355,21 @@ class _SearchBarState extends State<SearchBar> {
                 controller: _controller, // 控制正在编辑的文档
                 focusNode: _focus, // 控制焦点
                 onTap: () {
-                  if (widget.onSearchSubmit == null) {
-                    _focus.unfocus(); // 不是搜索页则失去焦点
-                  }
                   if (widget.onSearch != null) {
                     widget.onSearch!();
+                  } else if (widget.onSearchSubmit != null) {
+                    // 如果是可提交的搜索框 (如在搜索结果页)，点击时聚焦
+                    FocusScope.of(context).requestFocus(_focus);
+                  } else {
+                    // 其他情况 (如首页的搜索框，点击会导航)，则取消焦点
+                    _focus.unfocus();
                   }
                 },
-                onSubmitted: widget.onSearchSubmit,
+                onSubmitted: (String value) { // 确保 onSubmitted 回调拿到值
+                  if (widget.onSearchSubmit != null) {
+                    widget.onSearchSubmit!(value);
+                  }
+                },
                 textInputAction: TextInputAction.search, // 键盘回车文本
                 onChanged: (value) {
                   setState(() => _searchWord = value);
