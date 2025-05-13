@@ -15,7 +15,7 @@ var imageHeight = 424.0;
 var imageWidgetHeightRatio = imageWidth / imageHeight; // 宽高比
 
 class CommonImagePicker extends StatefulWidget {
-  final ValueChanged? onChange;
+  final ValueChanged<List<XFile>>? onChange; // Explicitly typed
 
   const CommonImagePicker({super.key, this.onChange});
 
@@ -78,7 +78,8 @@ class _CommonImagePickerState extends State<CommonImagePicker> {
                 setState(() {
                   files.remove(file);
                   if (widget.onChange != null) {
-                    widget.onChange!(file);
+                    // When removing, pass the updated list of files
+                    widget.onChange!(List.from(files));
                   }
                 });
               },

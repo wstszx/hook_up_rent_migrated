@@ -61,11 +61,11 @@ const RoomSchema = new mongoose.Schema({
         type: {
             type: String,
             enum: ['Point'], // GeoJSON type
-            default: 'Point'
+            // default: 'Point' // REMOVE THIS DEFAULT to prevent partial location object creation
         },
         coordinates: { // [longitude, latitude] 顺序很重要！
             type: [Number], // Array of numbers for longitude and latitude
-            default: undefined // 允许房源在创建时没有位置信息
+            // default: undefined // This is fine, or can be removed if location object itself is optional
         }
     },
     status: { // 房源状态，例如: 'available', 'rented', 'pending'

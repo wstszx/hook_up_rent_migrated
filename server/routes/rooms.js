@@ -50,30 +50,43 @@ const upload = multer({
 router.post('/', authMiddleware, (req, res, next) => {
     upload.array('roomImages', 10)(req, res, function (err) {
         if (err instanceof multer.MulterError) {
+            console.error('MulterError in POST /api/rooms:', err);
             return res.status(400).json({ message: `图片上传错误: ${err.message}` });
         } else if (err) {
+            console.error('FileFilter/Unknown Upload Error in POST /api/rooms:', err);
             return res.status(400).json({ message: err.message });
         }
         next();
     });
 }, async (req, res) => {
     try {
-        const { 
-            title, description, price, city, district, address, 
+        console.log('--- New Room Submission (POST /api/rooms) ---');
+        console.log('req.user:', JSON.stringify(req.user, null, 2));
+        console.log('req.body:', JSON.stringify(req.body, null, 2));
+        console.log('req.files:', JSON.stringify(req.files, null, 2));
+        
+        const {
+            title, description, price, city, district, address,
             rentType, roomType, floor, orientation, tags,
             longitude, latitude // 新增经纬度
         } = req.body;
         
+        if (!req.user || !req.user.userId) {
+            console.error('User ID not found in request after auth middleware. req.user:', req.user);
+            return res.status(400).json({ message: '用户认证信息错误，无法获取用户ID' });
+        }
         const publisherId = req.user.userId;
 
         if (!title || !price || !city || !rentType || !roomType) {
+            console.error('Missing required room info. Body:', req.body);
             return res.status(400).json({ message: '缺少必要的房源信息 (标题, 价格, 城市, 租赁类型, 户型)' });
         }
 
         let imagePaths = [];
         if (req.files && req.files.length > 0) {
-            imagePaths = req.files.map(file => `/uploads/images/rooms/${file.filename}`);
+            imagePaths = req.files.map(file => `/uploads/images/rooms/${file.filename}`); // Path relative to server's public/static serving
         }
+        console.log('Constructed Image Paths:', JSON.stringify(imagePaths, null, 2));
 
         const newRoomData = {
             title,
@@ -86,13 +99,16 @@ router.post('/', authMiddleware, (req, res, next) => {
             roomType,
             floor: floor || '',
             orientation: orientation || '',
-            images: imagePaths,
-            tags: tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t=>t.trim())) : [],
-            publisher: publisherId 
+            images: imagePaths, // Storing relative paths
+            tags: tags ? (Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t=>t.trim()) : [tags])) : [], // Robust tag handling
+            publisher: publisherId
+            // location will be added conditionally below
         };
+        console.log('Initial Data for new Room() constructor (before location):', JSON.stringify(newRoomData, null, 2));
 
         // 处理地理位置信息
-        if (longitude !== undefined && latitude !== undefined) {
+        // Add location field ONLY if valid coordinates are provided
+        if (longitude !== undefined && latitude !== undefined && String(longitude).trim() !== '' && String(latitude).trim() !== '') {
             const lon = parseFloat(longitude);
             const lat = parseFloat(latitude);
             if (!isNaN(lon) && !isNaN(lat)) {
@@ -100,24 +116,34 @@ router.post('/', authMiddleware, (req, res, next) => {
                     type: 'Point',
                     coordinates: [lon, lat]
                 };
+                console.log('Location data added:', newRoomData.location);
             } else {
-                console.warn('Received invalid longitude/latitude for new room:', longitude, latitude);
+                console.warn('Received invalid longitude/latitude (parseFloat failed) for new room:', longitude, latitude);
             }
+        } else {
+            console.log('Longitude/Latitude not provided or empty, skipping location field.');
         }
-
-
+        
+        console.log('Final Data for new Room() constructor:', JSON.stringify(newRoomData, null, 2));
         const newRoom = new Room(newRoomData);
         await newRoom.save();
+        console.log('Room saved successfully:', JSON.stringify(newRoom, null, 2));
         
         res.status(201).json({ message: '房源发布成功', room: newRoom });
 
     } catch (error) {
-        console.error('Error publishing room:', error);
+        console.error('Error in POST /api/rooms route handler:', error); // Log the full error
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(val => val.message);
+            console.error('Mongoose ValidationError:', messages);
             return res.status(400).json({ message: messages.join(', ') });
         }
-        res.status(500).json({ message: '服务器内部错误，发布房源失败' });
+        // For other errors, send a generic 500 and include stack in dev for more details
+        res.status(500).json({
+            message: '服务器内部错误，发布房源失败',
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 });
 

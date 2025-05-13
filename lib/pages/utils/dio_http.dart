@@ -31,18 +31,33 @@ class DioHttp {
   //get请求
   Future<Response<dynamic>> get(String path,
       [Map<String, dynamic>? params, String? token]) async {
-    var options = Options(headers: {'Authorization': token});
+    var headers = <String, dynamic>{};
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    var options = Options(headers: headers);
     return await _client!.get<dynamic>(path, queryParameters: params, options: options);
   }
 
 //post请求
   Future<Response<dynamic>> post(String path, {
-    dynamic data, // Changed from Map<String, dynamic>? params to dynamic data
+    dynamic data,
     String? token,
-    Options? options, // Added Options parameter
+    Options? options,
   }) async {
-    var requestOptions = options ?? Options(); // Use provided options or create new
-    requestOptions.headers = {...(requestOptions.headers ?? {}), 'Authorization': token};
+    var requestOptions = options ?? Options();
+    var currentHeaders = requestOptions.headers ?? <String, dynamic>{};
+    if (token != null && token.isNotEmpty) {
+      currentHeaders['Authorization'] = 'Bearer $token';
+    }
+    requestOptions.headers = currentHeaders;
+
+    if (kDebugMode) { // Print headers in debug mode
+      print('[DioHttp][post] Request Path: $path');
+      print('[DioHttp][post] Request Headers: ${requestOptions.headers}');
+      // Be cautious about printing data if it's large or sensitive
+      // print('[DioHttp][post] Request Data: $data');
+    }
 
     // Dio handles FormData content type automatically if data is FormData
     // If options already has contentType, it will be used.
@@ -53,8 +68,11 @@ class DioHttp {
 //post请求上传表单数据
   Future<Response<dynamic>> postFormData(String path,
       [Map<String, dynamic>? params, String? token]) async {
-    var options = Options(
-        headers: {'Authorization': token}, contentType: 'multipart/form-data');
+    var headers = <String, dynamic>{'contentType': 'multipart/form-data'};
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    var options = Options(headers: headers);
     return await _client!.post<dynamic>(path, data: FormData.fromMap(params ?? {}), options: options);
   }
 

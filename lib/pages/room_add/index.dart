@@ -7,7 +7,10 @@ import 'package:hook_up_rent/pages/utils/dio_http.dart';
 import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
 import 'package:hook_up_rent/scoped_model/auth.dart';
 import 'package:hook_up_rent/widgets/room_appliance.dart';
-// import 'package:image_picker/image_picker.dart'; // CommonImagePicker handles this
+import 'package:image_picker/image_picker.dart'; // Needed for XFile type
+import 'package:http_parser/http_parser.dart'; // For MediaType
+import 'package:mime/mime.dart'; // For lookupMimeType
+import 'package:path/path.dart' as p; // For p.extension
 import 'package:hook_up_rent/widgets/common_floating_button.dart';
 import 'package:hook_up_rent/widgets/common_form_item.dart';
 import 'package:hook_up_rent/widgets/common_image_picker.dart';
@@ -109,15 +112,41 @@ class _RoomAddPageState extends State<RoomAddPage> {
     FormData formData = FormData.fromMap(data);
     if (_pickedImages.isNotEmpty) {
       for (var i = 0; i < _pickedImages.length; i++) {
+        File imageFile = _pickedImages[i];
+        String? mimeTypeStr = lookupMimeType(imageFile.path);
+        MediaType? mediaType;
+
+        if (mimeTypeStr != null) {
+          final parts = mimeTypeStr.split('/');
+          if (parts.length == 2) {
+            mediaType = MediaType(parts[0], parts[1]);
+          }
+        }
+
+        // Fallback if MIME type couldn't be determined, though unlikely for valid images
+        mediaType ??= MediaType('application', 'octet-stream');
+        
+        // Get file extension for the filename
+        String extension = p.extension(imageFile.path); // e.g. '.jpg'
+        if (extension.startsWith('.')) {
+          extension = extension.substring(1); // remove leading dot -> 'jpg'
+        }
+
+
         formData.files.add(MapEntry(
           'roomImages', // This must match the field name expected by Multer on the backend
-          await MultipartFile.fromFile(_pickedImages[i].path, filename: 'room_image_$i.jpg'),
+          await MultipartFile.fromFile(
+            imageFile.path,
+            filename: 'room_image_$i.$extension', // Use dynamic extension
+            contentType: mediaType,
+          ),
         ));
       }
     }
     
     // 5. Send request
     CommonToast.showToast('正在提交...');
+    print('Attempting to submit with token: "$token"'); // Debug: Print token
     try {
       var response = await DioHttp.of(context).post(
         '/api/rooms',
@@ -230,9 +259,10 @@ class _RoomAddPageState extends State<RoomAddPage> {
           ),
           const CommonTitle('房屋图像 (最多9张)'),
           CommonImagePicker(
-            onChange: (images) { // Changed from onImagesChanged to onChange
+            onChange: (xFiles) { // xFiles is List<XFile>
               setState(() {
-                _pickedImages = images;
+                // Convert List<XFile> to List<File>
+                _pickedImages = xFiles.map((xfile) => File(xfile.path)).toList();
               });
             },
           ),
