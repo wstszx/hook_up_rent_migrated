@@ -23,11 +23,11 @@ List<InfoItem> getGeneratedInfoData() {
     '房产快讯 | 本月热门楼盘推荐'
   ];
   const baseImageUrls = [
-    'https://wx2.sinaimg.cn/mw1024/005SQLxwly1g6f89l4obbj305v04fjsw.jpg',
-    'https://wx2.sinaimg.cn/mw1024/005SQLxwly1g6f89l6hnsj305v04fab7.jpg',
-    'https://wx4.sinaimg.cn/mw1024/005SQLxwly1g6f89l5jlyj305v04f75q.jpg',
-    'https://tse3-mm.cn.bing.net/th/id/OIP-C.gFTEFj2F270kE2b9uS0YBQHaE8?w=288&h=192&c=7&r=0&o=5&pid=1.7', // 示例图片
-    'https://tse1-mm.cn.bing.net/th/id/OIP-C.1_-_gALo0y2JqYXeX2zQMQHaE8?w=288&h=192&c=7&r=0&o=5&pid=1.7'  // 示例图片
+    'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
   ];
   const sources = ["新华网", "本地快讯", "房产周刊", "财经在线"];
   final Random random = Random();
