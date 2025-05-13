@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'dart:async'; // <--- 添加对 dart:async 的导入
 
 import 'package:flutter/material.dart';
-import 'package:city_pickers/city_pickers.dart';
+// import 'package:city_pickers/city_pickers.dart'; // Commented out or remove if no longer needed elsewhere
 import 'package:geolocator/geolocator.dart';
+import '../../pages/city_selection_page.dart'; // Import for the new city selection page
 import 'package:geocoding/geocoding.dart';
 import 'package:scoped_model/scoped_model.dart';
 import '../../config.dart';
@@ -220,24 +221,21 @@ class _SearchBarState extends State<SearchBar> {
 
   // 选择城市
   _changeLocation() async {
-    var result = await CityPickers.showCitiesSelector(
-        context: context, theme: ThemeData(primaryColor: Colors.green));
-    String? cityNameFromResult = result?.cityName;
-    if (cityNameFromResult == null) {
-      return;
-    }
-    // 直接使用选择器返回的城市名
-    // 将城市名本身用作 id
-    String cityId = cityNameFromResult;
-    // 尝试去除城市名末尾的“市”字，除非它是单字城市名
-    if (cityNameFromResult.endsWith('市') && cityNameFromResult.length > 1) {
-      cityNameFromResult = cityNameFromResult.substring(0, cityNameFromResult.length - 1);
-      // 如果ID也是基于处理前的城市名，也同步处理
-      // cityId = cityNameFromResult; // 如果希望ID也是处理后的
-    }
+    // Navigate to the new CitySelectionPage
+    final selectedCity = await Navigator.push<GeneralType>(
+      context,
+      MaterialPageRoute(builder: (context) => const CitySelectionPage()),
+    );
 
-    print('手动选择的城市: $cityNameFromResult, 使用的ID: $cityId');
-    _saveCity(GeneralType(cityNameFromResult, cityId));
+    if (selectedCity != null) {
+      // We have a city selected from our new page
+      // The existing _saveCity method can be reused.
+      print('手动选择的城市 (来自新页面): ${selectedCity.name}, 使用的ID: ${selectedCity.id}');
+      _saveCity(selectedCity);
+    } else {
+      // User might have backed out of CitySelectionPage without choosing
+      print('未从新页面选择城市。');
+    }
   }
 
   _loadSavedCityOrDefault() async {
