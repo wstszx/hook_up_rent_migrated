@@ -1,6 +1,13 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:hook_up_rent/pages/utils/common_toast.dart';
+import 'package:hook_up_rent/pages/utils/dio_http.dart';
+import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
+import 'package:hook_up_rent/scoped_model/auth.dart';
 import 'package:hook_up_rent/widgets/room_appliance.dart';
-import 'package:image_picker/image_picker.dart';
+// import 'package:image_picker/image_picker.dart'; // CommonImagePicker handles this
 import 'package:hook_up_rent/widgets/common_floating_button.dart';
 import 'package:hook_up_rent/widgets/common_form_item.dart';
 import 'package:hook_up_rent/widgets/common_image_picker.dart';
@@ -16,16 +23,129 @@ class RoomAddPage extends StatefulWidget {
 }
 
 class _RoomAddPageState extends State<RoomAddPage> {
-  int rentType = 0; // 租凭方式
-  int decorationType = 0; // 装修
+  // --- Form Controllers ---
+  var titleController = TextEditingController();
+  var descController = TextEditingController();
+  var communityController = TextEditingController(); // 将映射到 address
+  var cityController = TextEditingController();
+  var districtController = TextEditingController();
+  var priceController = TextEditingController();
+  var sizeController = TextEditingController(); // 将作为 tag
 
-  int roomType = 0; // 户型
-  int floor = 0; // 楼层
-  int oriented = 0; // 朝向
+  // --- Selectable Options ---
+  int rentType = 0; // 0: 合租, 1: 整租
+  int roomType = 0; // 0: 一室, 1: 二室, ...
+  int floor = 0; // 0: 高楼层, 1: 中楼层, ...
+  int oriented = 0; // 0: 东, 1: 南, ...
+  int decorationType = 0; // 0: 精装, 1: 简装 (将作为 tag)
 
-  var titleController = TextEditingController(); // 描述
-  var descController = TextEditingController(); // 描述
-  var communityController = TextEditingController(); // 小区
+  // --- Image Picker & Room Appliances ---
+  List<File> _pickedImages = [];
+  List<String> _selectedAppliances = [];
+
+
+  // --- Helper methods for mapping int to String ---
+  String _getRentTypeString(int val) => ['合租', '整租'][val];
+  String _getRoomTypeString(int val) => ['一室', '二室', '三室', '四室'][val];
+  String _getFloorString(int val) => ['高楼层', '中楼层', '低楼层'][val];
+  String _getOrientedString(int val) => ['东', '南', '西', '北'][val];
+  String _getDecorationTypeString(int val) => ['精装', '简装'][val];
+
+  Future<void> _submit() async {
+    // 1. Validate form data
+    final title = titleController.text;
+    final description = descController.text;
+    final city = cityController.text;
+    final district = districtController.text;
+    final address = communityController.text; // 小区名作为地址
+    final price = priceController.text;
+    final size = sizeController.text;
+
+    if (title.isEmpty || city.isEmpty || address.isEmpty || price.isEmpty) {
+      CommonToast.showToast('标题、城市、小区和租金不能为空');
+      return;
+    }
+    double? parsedPrice;
+    try {
+      parsedPrice = double.parse(price);
+      if (parsedPrice <= 0) throw FormatException();
+    } catch (e) {
+      CommonToast.showToast('请输入有效的租金');
+      return;
+    }
+
+    // 2. Prepare data for backend
+    List<String> tags = [..._selectedAppliances];
+    tags.add(_getDecorationTypeString(decorationType));
+    if (size.isNotEmpty) {
+      tags.add('$size平方米');
+    }
+    
+    Map<String, dynamic> data = {
+      'title': title,
+      'description': description,
+      'price': parsedPrice,
+      'city': city,
+      'district': district,
+      'address': address,
+      'rentType': _getRentTypeString(rentType),
+      'roomType': _getRoomTypeString(roomType),
+      'floor': _getFloorString(floor),
+      'orientation': _getOrientedString(oriented),
+      'tags': tags,
+      // 'roomImages' will be handled by FormData
+    };
+
+    // 3. Get token
+    final auth = ScopedModelHelper.getModel<AuthModel>(context);
+    if (!auth.isLogin || auth.token.isEmpty) {
+      CommonToast.showToast('请先登录');
+      // Optionally navigate to login page
+      return;
+    }
+    final token = auth.token;
+
+    // 4. Prepare FormData for image uploads
+    FormData formData = FormData.fromMap(data);
+    if (_pickedImages.isNotEmpty) {
+      for (var i = 0; i < _pickedImages.length; i++) {
+        formData.files.add(MapEntry(
+          'roomImages', // This must match the field name expected by Multer on the backend
+          await MultipartFile.fromFile(_pickedImages[i].path, filename: 'room_image_$i.jpg'),
+        ));
+      }
+    }
+    
+    // 5. Send request
+    CommonToast.showToast('正在提交...');
+    try {
+      var response = await DioHttp.of(context).post(
+        '/api/rooms',
+        data: formData, // Pass FormData directly as data
+        token: token,
+        // Dio will automatically set Content-Type for FormData if data is FormData
+        // options: Options(contentType: 'multipart/form-data'), // This line is usually not needed if data is FormData and DioHttp.post is correctly modified
+      );
+
+      if (response.statusCode == 201) {
+        CommonToast.showToast('房源发布成功！');
+        if (mounted) {
+          Navigator.of(context).pop(true); // Pop and indicate success
+        }
+      } else {
+        String errorMessage = response.data?['message'] ?? '发布失败，请稍后再试';
+        CommonToast.showToast(errorMessage);
+      }
+    } catch (e) {
+      print('Error submitting room: $e');
+      if (e is DioException && e.response?.data is Map) {
+         CommonToast.showToast(e.response?.data['message'] ?? '提交失败，网络错误');
+      } else {
+        CommonToast.showToast('提交失败，请检查网络连接');
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -34,29 +154,42 @@ class _RoomAddPageState extends State<RoomAddPage> {
         title: const Text('房源发布'),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: CommonFloatingActionButton('提交', () {}),
+      floatingActionButton: CommonFloatingActionButton('提交', _submit), // Call _submit
       body: ListView(
+        padding: const EdgeInsets.only(bottom: 80), // Ensure space for FAB
         children: [
           const CommonTitle('房源信息'),
           CommonFormItem(
-            label: '小区',
-            hintText: '请输入小区名称',
+            label: '城市',
+            hintText: '请输入城市，如：北京',
+            controller: cityController,
+          ),
+          CommonFormItem(
+            label: '行政区',
+            hintText: '请输入行政区，如：海淀区 (可选)',
+            controller: districtController,
+          ),
+          CommonFormItem(
+            label: '小区/地址',
+            hintText: '请输入小区名称或详细地址',
             controller: communityController,
           ),
           CommonFormItem(
             label: '租金',
             suffixText: '元/月',
             hintText: '请输入租金',
-            controller: TextEditingController(),
+            controller: priceController,
+            keyboardType: TextInputType.number,
           ),
           CommonFormItem(
             label: '大小',
             suffixText: '平方米',
-            hintText: '请输入房屋大小',
-            controller: TextEditingController(),
+            hintText: '请输入房屋大小 (将作为标签)',
+            controller: sizeController,
+            keyboardType: TextInputType.number,
           ),
           CommonRadioFormItem(
-            label: '租凭方式',
+            label: '租赁方式',
             options: const ['合租', '整租'],
             value: rentType,
             onChange: (index) {
@@ -89,31 +222,46 @@ class _RoomAddPageState extends State<RoomAddPage> {
           ),
           CommonRadioFormItem(
             label: '装修',
-            options: const ['精装', '简装'],
+            options: const ['精装', '简装'], // Will be added as a tag
             value: decorationType,
             onChange: (index) {
               setState(() => decorationType = index!);
             },
           ),
-          const CommonTitle('房屋图像'),
-          const CommonImagePicker(),
+          const CommonTitle('房屋图像 (最多9张)'),
+          CommonImagePicker(
+            onChange: (images) { // Changed from onImagesChanged to onChange
+              setState(() {
+                _pickedImages = images;
+              });
+            },
+          ),
           const CommonTitle('房屋标题'),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               controller: titleController,
               decoration: const InputDecoration(
-                hintText: '请输入标题（例如：整组，小区名 2 室 2000 元）',
+                hintText: '请输入标题（例如：整租 小区名 二室 2000元）',
                 border: InputBorder.none,
               ),
             ),
           ),
           const CommonTitle('房屋配置'),
-          RoomAppliance((data) {}),
+          RoomAppliance( // Changed from named parameter to positional
+            (selectedItems) { // selectedItems is List<RoomApplianceItem>
+              setState(() {
+                _selectedAppliances = selectedItems
+                    .where((item) => item.isChecked) // Filter for checked items
+                    .map((item) => item.title)       // Extract the title
+                    .toList();                      // Convert to List<String>
+              });
+            },
+          ),
           const CommonTitle('房屋描述'),
           Container(
-            margin: const EdgeInsets.only(bottom: 100),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            margin: const EdgeInsets.only(bottom: 100), // Keep margin for FAB
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: TextField(
               controller: descController,
               maxLines: 5,

@@ -36,10 +36,18 @@ class DioHttp {
   }
 
 //post请求
-  Future<Response<dynamic>> post(String path,
-      [Map<String, dynamic>? params, String? token]) async {
-    var options = Options(headers: {'Authorization': token});
-    return await _client!.post<dynamic>(path, data: params, options: options);
+  Future<Response<dynamic>> post(String path, {
+    dynamic data, // Changed from Map<String, dynamic>? params to dynamic data
+    String? token,
+    Options? options, // Added Options parameter
+  }) async {
+    var requestOptions = options ?? Options(); // Use provided options or create new
+    requestOptions.headers = {...(requestOptions.headers ?? {}), 'Authorization': token};
+
+    // Dio handles FormData content type automatically if data is FormData
+    // If options already has contentType, it will be used.
+    // Otherwise, if data is Map, Dio defaults to application/json.
+    return await _client!.post<dynamic>(path, data: data, options: requestOptions);
   }
 
 //post请求上传表单数据

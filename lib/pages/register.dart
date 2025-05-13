@@ -55,8 +55,9 @@ class _RegisterPageState extends State<RegisterPage> {
       'password': password,
     };
     try {
+      // Updated to use named 'data' parameter for DioHttp.post
       var response =
-          await DioHttp.of(context).post(path, params); // Use relative path
+          await DioHttp.of(context).post(path, data: params);
 
       // Assuming response.data is already a Map<String, dynamic> if the server returns JSON
       // And Dio is configured to parse JSON responses automatically.

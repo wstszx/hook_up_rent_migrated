@@ -39,7 +39,8 @@ class _LoginPageState extends State<LoginPage> {
     };
 
     try {
-      var response = await DioHttp.of(context).post(url, params);
+      // Updated to use named 'data' parameter for DioHttp.post
+      var response = await DioHttp.of(context).post(url, data: params);
 
       // Dio通常会自动解析JSON，所以response.data应该是Map<String, dynamic>?
       if (response.data != null && response.data is Map<String, dynamic>) {

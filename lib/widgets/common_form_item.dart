@@ -8,6 +8,7 @@ class CommonFormItem extends StatelessWidget {
   final String? hintText;
   final ValueChanged? onChanged;
   final TextEditingController? controller;
+  final TextInputType? keyboardType; // Added keyboardType
 
   const CommonFormItem(
       {super.key,
@@ -17,7 +18,8 @@ class CommonFormItem extends StatelessWidget {
       this.suffixText,
       this.hintText,
       this.onChanged,
-      this.controller});
+      this.controller,
+      this.keyboardType}); // Added keyboardType
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +50,7 @@ class CommonFormItem extends StatelessWidget {
                 ? contentBuilder!(context)
                 : TextField(
                     controller: controller,
+                    keyboardType: keyboardType, // Used keyboardType
                     decoration: InputDecoration(
                       hintText: hintText ?? '',
                       border: InputBorder.none,
