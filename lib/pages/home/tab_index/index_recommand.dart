@@ -17,37 +17,60 @@ class _IndexRecommandState extends State<IndexRecommand> {
   List<IndexRecommendItem> _recommendations = [];
   bool _isLoading = true;
   String? _error;
-  bool _isDataFetched = false; // Flag to ensure data is fetched only once
+  // bool _isDataFetched = false; // Flag to ensure data is fetched only once - REMOVED
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Fetch data only once when dependencies change (like ScopedModel availability)
-    if (!_isDataFetched) {
-      _fetchRecommendations();
-      _isDataFetched = true;
-    }
+    // Always attempt to fetch; _fetchRecommendations will decide if it's appropriate
+    _fetchRecommendations();
   }
 
   Future<void> _fetchRecommendations() async {
-    try {
-      // Get current city from ScopedModel
-      final cityModel = ScopedModelHelper.getModel<CityModel>(context);
-      final cityName = cityModel.city?.id; // Use 'id' which maps to JSON 'value' (city name string)
+    final cityModel = ScopedModelHelper.getModel<CityModel>(context);
+    final currentCity = cityModel.city;
+    final cityName = currentCity?.name;
+    print('[Frontend] _fetchRecommendations called. Current city: ${currentCity?.name} (ID: ${currentCity?.id})');
 
-      Map<String, dynamic>? params;
-      if (cityName != null && cityName.isNotEmpty) {
-        params = {'city': cityName};
-        print('Fetching recommendations for city: $cityName');
-      } else {
-        print('Fetching recommendations for all cities (no city selected).');
+    if (cityName == null || cityName.isEmpty) {
+      print('[Frontend] City name is null or empty. Waiting for city information.');
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Not loading recommendations yet
+          _recommendations = []; // Clear any previous recommendations
+          _error = '请先选择或等待城市加载'; // User-friendly message
+        });
       }
+      return; // Do not proceed to fetch recommendations
+    }
+
+    // If already loading, prevent re-entry.
+    // This check should ideally be more sophisticated if city can change rapidly
+    // or if fetches for different cities can be queued, but for now, it prevents simple re-entry.
+    if (_isLoading) {
+      print('[Frontend] Already loading recommendations for $cityName. Skipping.');
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null; // Clear previous errors before a new fetch
+      });
+    }
+
+    try {
+      Map<String, dynamic> params = {'city': cityName};
+      print('[Frontend] Fetching recommendations with params: $params');
 
       final response = await DioHttp.of(context).get('/api/recommendations', params);
+      print('[Frontend] Received response from /api/recommendations. Status: ${response.statusCode}');
 
       if (response.statusCode == 200 && response.data != null) {
+        print('[Frontend] Response data: ${response.data}');
         // Assuming response.data is List<dynamic> where each element is Map<String, dynamic>
         final List<dynamic> dataList = response.data as List<dynamic>;
+        print('[Frontend] Parsed dataList length: ${dataList.length}');
         final List<IndexRecommendItem> fetchedItems = dataList.map((item) {
           // Basic type checking before creating the item
           if (item is Map<String, dynamic> &&
