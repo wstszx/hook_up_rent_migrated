@@ -6,10 +6,10 @@ import 'package:flutter_swiper_null_safety/flutter_swiper_null_safety.dart';
 import 'package:hook_up_rent/widgets/common_image.dart';
 
 const List<String> defaultImages = [
-  'https://img-blog.csdnimg.cn/img_convert/cbb8a63102cbc9c779aa3ccbfe352b37.png',
-  'https://img-blog.csdnimg.cn/img_convert/7d196d8b3ceea128617b33296ba8e6cd.png',
-  'https://img-blog.csdnimg.cn/img_convert/4c3424ab3c6549d610d36a9542824727.png',
-  'https://img-blog.csdnimg.cn/img_convert/7c5b94dba308d3ac52e18271feef033b.png',
+  'https://images.unsplash.com/photo-1523217582562-09d0def993a6', // Modern house
+  'https://images.unsplash.com/photo-1501183638710-841dd1904471', // Interior with plants
+  'https://images.unsplash.com/photo-1570129477492-45c003edd2be', // House with a pool
+  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914', // Luxury house
 ];
 
 var imageWidth = 424;
