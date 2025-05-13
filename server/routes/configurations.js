@@ -40,9 +40,11 @@ const Room = require('../models/Room'); // <--- 引入 Room 模型
 router.get('/filter-options', async (req, res) => {
     try {
         // Fetch cities from the CityDistrict collection
+        console.log('[Server][filter-options] Attempting to fetch cities from CityDistrict collection...');
         // Assuming no specific order field in CityDistrict, remove .sort({ order: 1 })
         // If sorting is needed (e.g., by name), add .sort({ name: 1 }) or similar.
         const cities = await CityDistrict.find();
+        console.log(`[Server][filter-options] Found ${cities.length} cities:`, JSON.stringify(cities, null, 2));
         const rentTypesFromDB = await RentTypeOption.find().sort({ order: 1 });
         const priceRanges = await PriceRangeOption.find().sort({ order: 1 });
 

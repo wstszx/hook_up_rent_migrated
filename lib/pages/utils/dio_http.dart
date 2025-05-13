@@ -1,3 +1,5 @@
+import 'dart:convert'; // Import for jsonEncode
+import 'package:flutter/foundation.dart'; // Import for kDebugMode
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../models/general_type.dart'; // Added import for GeneralType
@@ -50,58 +52,86 @@ class DioHttp {
 
   // Method to fetch cities from the backend
   Future<List<GeneralType>> getCities({String? token}) async {
+    if (kDebugMode) {
+      print('[DioHttp][getCities] Attempting to fetch cities...');
+    }
     try {
-      // Corrected API endpoint to fetch filter options which include cities
       final response = await get('/api/configurations/filter-options', null, token);
+      if (kDebugMode) {
+        print('[DioHttp][getCities] Response status: ${response.statusCode}');
+        try {
+          print('[DioHttp][getCities] Raw response data: ${jsonEncode(response.data)}');
+        } catch (e) {
+          print('[DioHttp][getCities] Raw response data (not JSON encodable): ${response.data.toString()}');
+        }
+      }
 
       if (response.statusCode == 200 && response.data != null) {
-        // The response.data is an object like: { cities: [], rentTypes: [], ... }
-        // We need to extract the 'cities' list from this object.
         if (response.data is Map<String, dynamic>) {
           Map<String, dynamic> responseData = response.data as Map<String, dynamic>;
           if (responseData.containsKey('cities') && responseData['cities'] is List) {
             List<dynamic> cityDataList = responseData['cities'] as List<dynamic>;
-            return cityDataList
+            if (kDebugMode) {
+              print('[DioHttp][getCities] Extracted cityDataList: ${jsonEncode(cityDataList)}');
+            }
+
+            List<GeneralType> cities = cityDataList
                 .map((data) {
                   if (data is Map<String, dynamic>) {
-                    // Manually map backend fields to what GeneralType.fromJson expects.
-                    // GeneralType expects 'label' for name and 'value' for id.
-                    // Backend's CityOption provides 'name' and 'id' (which is a string of '_id').
                     final String? backendName = data['name'] as String?;
-                    final String? backendId = data['id'] as String? ?? data['_id'] as String?; // Use 'id' if present, else '_id'
-
+                    final String? backendId = data['id'] as String? ?? data['_id'] as String?;
+                    if (kDebugMode) {
+                      // print('[DioHttp][getCities] Processing city item: name=$backendName, id=$backendId');
+                    }
                     if (backendName != null && backendId != null) {
                       return GeneralType.fromJson({
-                        'label': backendName, // Map backend 'name' to 'label'
-                        'value': backendId,   // Map backend 'id' (or '_id') to 'value'
+                        'label': backendName,
+                        'value': backendId,
                       });
                     } else {
-                      print('Warning: Missing "name" or "id"/"_id" in city data item: $data');
+                      if (kDebugMode) {
+                        print('[DioHttp][getCities] Warning: Missing "name" or "id"/"_id" in city data item: $data');
+                      }
                       return null;
                     }
                   } else {
-                    print('Warning: Invalid item format in city data list: $data');
+                    if (kDebugMode) {
+                      print('[DioHttp][getCities] Warning: Invalid item format in city data list: $data');
+                    }
                     return null;
                   }
                 })
                 .whereType<GeneralType>()
                 .toList();
+            if (kDebugMode) {
+              print('[DioHttp][getCities] Parsed cities: ${cities.map((c) => "Name: ${c.name}, ID: ${c.id}").toList()}');
+              print('[DioHttp][getCities] Successfully fetched and parsed ${cities.length} cities.');
+            }
+            return cities;
           } else {
-            print('Failed to load cities: "cities" key not found or not a list in response. Data: ${response.data}');
+            if (kDebugMode) {
+              print('[DioHttp][getCities] Failed to load cities: "cities" key not found or not a list in response. Data: ${response.data}');
+            }
             return [];
           }
         } else {
-          print('Failed to load cities: Response data is not a Map. Data: ${response.data}');
+          if (kDebugMode) {
+            print('[DioHttp][getCities] Failed to load cities: Response data is not a Map. Data: ${response.data}');
+          }
           return [];
         }
       } else {
-        print('Failed to load cities: Status ${response.statusCode}, Data: ${response.data}');
-        return []; // Or throw an exception
+        if (kDebugMode) {
+          print('[DioHttp][getCities] Failed to load cities: Status ${response.statusCode}, Data: ${response.data}');
+        }
+        return [];
       }
     } catch (e, s) {
-      print('Error fetching cities: $e');
-      print('Stack trace: $s');
-      return []; // Or throw an exception
+      if (kDebugMode) {
+        print('[DioHttp][getCities] Error fetching cities: $e');
+        print('[DioHttp][getCities] Stack trace: $s');
+      }
+      return [];
     }
   }
 }
