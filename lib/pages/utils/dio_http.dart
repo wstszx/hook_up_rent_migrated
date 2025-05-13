@@ -26,24 +26,24 @@ class DioHttp {
   }
 
   //get请求
-  Future<Response<Map<String, dynamic>>> get(String path,
+  Future<Response<dynamic>> get(String path,
       [Map<String, dynamic>? params, String? token]) async {
     var options = Options(headers: {'Authorization': token});
-    return await _client!.get(path, queryParameters: params, options: options);
+    return await _client!.get<dynamic>(path, queryParameters: params, options: options);
   }
 
 //post请求
-  Future<Response<Map<String, dynamic>>> post(String path,
+  Future<Response<dynamic>> post(String path,
       [Map<String, dynamic>? params, String? token]) async {
     var options = Options(headers: {'Authorization': token});
-    return await _client!.post(path, data: params, options: options);
+    return await _client!.post<dynamic>(path, data: params, options: options);
   }
 
 //post请求上传表单数据
-  Future<Response<Map<String, dynamic>>> postFormData(String path,
+  Future<Response<dynamic>> postFormData(String path,
       [Map<String, dynamic>? params, String? token]) async {
     var options = Options(
         headers: {'Authorization': token}, contentType: 'multipart/form-data');
-    return await _client!.post(path, data: FormData.fromMap(params ?? {}), options: options);
+    return await _client!.post<dynamic>(path, data: FormData.fromMap(params ?? {}), options: options);
   }
 }

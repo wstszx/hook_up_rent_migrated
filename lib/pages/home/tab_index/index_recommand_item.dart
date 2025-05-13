@@ -32,18 +32,26 @@ class IndexRecommandItemWidget extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              children: [
-                Text(
-                  data.title,
-                  style: textStyle,
-                ),
-                Text(
-                  data.subTitle,
-                  style: textStyle,
-                )
-              ],
+            Expanded( // Wrap the Column with Expanded
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, // Align text to the start
+                children: [
+                  Text(
+                    data.title,
+                    style: textStyle,
+                    overflow: TextOverflow.ellipsis, // Handle text overflow
+                    maxLines: 1, // Optional: Limit to one line
+                  ),
+                  Text(
+                    data.subTitle,
+                    style: textStyle,
+                    overflow: TextOverflow.ellipsis, // Handle text overflow
+                    maxLines: 1, // Optional: Limit to one line
+                  )
+                ],
+              ),
             ),
+            const SizedBox(width: 10), // Add some spacing between text and image
             CommonImage(data.imageUrl, width: 55),
           ],
         ),
