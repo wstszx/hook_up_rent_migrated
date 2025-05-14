@@ -58,10 +58,10 @@ class _LoginPageState extends State<LoginPage> {
           // 假设 AuthModel 的 login 方法只需要 token
           ScopedModelHelper.getModel<AuthModel>(context).login(token, context);
 
-          //一秒之后回到上一个页面
+          //一秒之后导航到主页并移除所有之前的路由
           Timer(const Duration(seconds: 1), () {
             if (mounted) { // 检查widget是否还在树中
-              Navigator.of(context).pop();
+              Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
             }
           });
         } else {

@@ -19,6 +19,8 @@ class SettingPage extends StatelessWidget {
               //退出登录
               ScopedModelHelper.getModel<AuthModel>(context).logout();
               CommonToast.showToast('已经退出登录。');
+              // 导航到登录页并移除所有之前的路由
+              Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
             },
             child: const Text('退出登录'),
           )

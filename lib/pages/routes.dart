@@ -9,6 +9,7 @@ import 'package:hook_up_rent/pages/room_detail/index.dart'; // 房源详情页
 import 'package:hook_up_rent/pages/room_favorite/index.dart'; // 我的收藏页
 import 'package:hook_up_rent/pages/my_orders/index.dart'; // 我的订单页
 import 'package:hook_up_rent/pages/profile_edit.dart'; // 个人资料编辑页
+import 'package:hook_up_rent/pages/setting.dart'; // 设置页
  
 class Routes {
   // 定义路由名称
@@ -21,6 +22,7 @@ class Routes {
   static String roomFavorite = 'room_favorite'; // 我的收藏页
   static String myOrders = 'my_orders'; // 我的订单页
   static String profileEdit = 'profile_edit'; // 个人资料编辑页
+    static String setting = 'setting'; // 设置页
  
   static void configureRoutes(FluroRouter router) {
     router.define(home, handler: _homeHandler);
@@ -38,6 +40,7 @@ class Routes {
     router.define(roomFavorite, handler: _roomFavoriteHandler, transitionType: TransitionType.native);
     router.define(myOrders, handler: _myOrdersHandler, transitionType: TransitionType.native);
     router.define(profileEdit, handler: _profileEditHandler, transitionType: TransitionType.native);
+    router.define(setting, handler: _settingHandler, transitionType: TransitionType.native);
   }
  
   // 定义路由处理函数
@@ -84,5 +87,10 @@ class Routes {
   static final Handler _profileEditHandler = Handler(
       handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
     return const ProfileEditPage();
+  });
+
+  static final Handler _settingHandler = Handler(
+      handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
+    return const SettingPage();
   });
 }
