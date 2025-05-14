@@ -7,6 +7,8 @@ import 'package:hook_up_rent/pages/utils/dio_http.dart';
 import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
 import 'package:hook_up_rent/scoped_model/auth.dart';
 import 'package:hook_up_rent/widgets/room_appliance.dart';
+// Import for filter data
+import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart' as filter_data;
 import 'package:image_picker/image_picker.dart'; // Needed for XFile type
 import 'package:http_parser/http_parser.dart'; // For MediaType
 import 'package:mime/mime.dart'; // For lookupMimeType
@@ -37,9 +39,13 @@ class _RoomAddPageState extends State<RoomAddPage> {
 
   // --- Selectable Options ---
   int rentType = 0; // 0: 合租, 1: 整租
-  int roomType = 0; // 0: 一室, 1: 二室, ...
-  int floor = 0; // 0: 高楼层, 1: 中楼层, ...
-  int oriented = 0; // 0: 东, 1: 南, ...
+  // String? selectedRoomTypeId; // Will be initialized in initState
+  // String? selectedFloorId;    // Will be initialized in initState
+  // String? selectedOrientedId; // Will be initialized in initState
+  String selectedRoomTypeId = filter_data.roomTypeList.first.id;
+  String selectedFloorId = filter_data.floorList.first.id;
+  String selectedOrientedId = filter_data.orientedList.first.id;
+
   int decorationType = 0; // 0: 精装, 1: 简装 (将作为 tag)
 
   // --- Image Picker & Room Appliances ---
@@ -49,9 +55,9 @@ class _RoomAddPageState extends State<RoomAddPage> {
 
   // --- Helper methods for mapping int to String ---
   String _getRentTypeString(int val) => ['合租', '整租'][val];
-  String _getRoomTypeString(int val) => ['一室', '二室', '三室', '四室'][val];
-  String _getFloorString(int val) => ['高楼层', '中楼层', '低楼层'][val];
-  String _getOrientedString(int val) => ['东', '南', '西', '北'][val];
+  // String _getRoomTypeString(int val) => ['一室', '二室', '三室', '四室'][val]; // No longer needed
+  // String _getFloorString(int val) => ['高楼层', '中楼层', '低楼层'][val]; // No longer needed
+  // String _getOrientedString(int val) => ['东', '南', '西', '北'][val]; // No longer needed
   String _getDecorationTypeString(int val) => ['精装', '简装'][val];
 
   Future<void> _submit() async {
@@ -92,9 +98,9 @@ class _RoomAddPageState extends State<RoomAddPage> {
       'district': district,
       'address': address,
       'rentType': _getRentTypeString(rentType),
-      'roomType': _getRoomTypeString(roomType),
-      'floor': _getFloorString(floor),
-      'orientation': _getOrientedString(oriented),
+      'roomType': selectedRoomTypeId, // Use ID directly
+      'floor': selectedFloorId,       // Use ID directly
+      'orientation': selectedOrientedId, // Use ID directly
       'tags': tags,
       // 'roomImages' will be handled by FormData
     };
@@ -227,27 +233,33 @@ class _RoomAddPageState extends State<RoomAddPage> {
           ),
           CommonSelectFormItem(
             label: '户型',
-            value: roomType,
+            value: filter_data.roomTypeList.indexWhere((item) => item.id == selectedRoomTypeId),
             onChange: (val) {
-              setState(() => roomType = val!);
+              if (val != null && val < filter_data.roomTypeList.length) {
+                setState(() => selectedRoomTypeId = filter_data.roomTypeList[val].id);
+              }
             },
-            options: const ['一室', '二室', '三室', '四室'],
+            options: filter_data.roomTypeList.map((item) => item.name).toList(),
           ),
           CommonSelectFormItem(
             label: '楼层',
-            value: floor,
+            value: filter_data.floorList.indexWhere((item) => item.id == selectedFloorId),
             onChange: (val) {
-              setState(() => floor = val!);
+              if (val != null && val < filter_data.floorList.length) {
+                setState(() => selectedFloorId = filter_data.floorList[val].id);
+              }
             },
-            options: const ['高楼层', '中楼层', '低楼层'],
+            options: filter_data.floorList.map((item) => item.name).toList(),
           ),
           CommonSelectFormItem(
             label: '朝向',
-            value: oriented,
+            value: filter_data.orientedList.indexWhere((item) => item.id == selectedOrientedId),
             onChange: (val) {
-              setState(() => oriented = val!);
+              if (val != null && val < filter_data.orientedList.length) {
+                setState(() => selectedOrientedId = filter_data.orientedList[val].id);
+              }
             },
-            options: const ['东', '南', '西', '北'],
+            options: filter_data.orientedList.map((item) => item.name).toList(),
           ),
           CommonRadioFormItem(
             label: '装修',

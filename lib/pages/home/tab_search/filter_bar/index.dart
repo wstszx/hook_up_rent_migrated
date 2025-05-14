@@ -23,10 +23,9 @@ class _FilterBarState extends State<FilterBar> {
   // 本地数据列表，部分将由API数据替代或补充
   List<file_data.GeneralType> _priceListLocal = [];
   List<file_data.GeneralType> _rentTypeListLocal = [];
-  // 下面三个将从API获取
-  List<file_data.GeneralType> _roomTypeListFromApi = [];
-  List<file_data.GeneralType> _orientedListFromApi = [];
-  List<file_data.GeneralType> _floorListFromApi = [];
+  // 户型和朝向将使用本地静态数据
+  // List<file_data.GeneralType> _roomTypeListFromApi = []; // No longer needed
+  // List<file_data.GeneralType> _orientedListFromApi = []; // No longer needed
   List<file_data.GeneralType> _tagListLocal = [];
   // 城市和区域列表通常更动态，这里仅为示例，实际应从 CityModel 或 API 获取
   List<file_data.GeneralType> _cityListLocal = []; // 城市列表通常由API或特定模型管理
@@ -70,24 +69,19 @@ class _FilterBarState extends State<FilterBar> {
       if (res.statusCode == 200 && res.data != null) {
         Map<String, dynamic> data = res.data!;
         
-        // 处理户型
-        if (data['roomTypes'] is List) {
-          _roomTypeListFromApi = (data['roomTypes'] as List)
-              .map((item) => file_data.GeneralType(item.toString(), item.toString()))
-              .toList();
-        }
-        // 处理朝向
-        if (data['orientations'] is List) {
-          _orientedListFromApi = (data['orientations'] as List)
-              .map((item) => file_data.GeneralType(item.toString(), item.toString()))
-              .toList();
-        }
-        // 处理楼层
-        if (data['floors'] is List) {
-          _floorListFromApi = (data['floors'] as List)
-              .map((item) => file_data.GeneralType(item.toString(), item.toString()))
-              .toList();
-        }
+        // 户型和朝向数据将从本地 data.dart 获取，不再通过 API
+        // // 处理户型
+        // if (data['roomTypes'] is List) {
+        //   _roomTypeListFromApi = (data['roomTypes'] as List)
+        //       .map((item) => file_data.GeneralType(item.toString(), item.toString()))
+        //       .toList();
+        // }
+        // // 处理朝向
+        // if (data['orientations'] is List) {
+        //   _orientedListFromApi = (data['orientations'] as List)
+        //       .map((item) => file_data.GeneralType(item.toString(), item.toString()))
+        //       .toList();
+        // }
 
         // 处理方式 (rentTypes)
         if (data['rentTypes'] is List) {
@@ -118,9 +112,9 @@ class _FilterBarState extends State<FilterBar> {
       }
     } catch (e) {
       print('Error fetching filter options: $e');
-      _roomTypeListFromApi = file_data.roomTypeList;
-      _orientedListFromApi = file_data.orientedList;
-      _floorListFromApi = file_data.floorList;
+      // _roomTypeListFromApi = file_data.roomTypeList; // No longer needed
+      // _orientedListFromApi = file_data.orientedList; // No longer needed
+      // _floorListFromApi = file_data.floorList; // No longer needed, using static data
       _rentTypeListLocal = file_data.rentTypeList;
       _priceListLocal = file_data.priceList;
       if (mounted) {
@@ -277,10 +271,10 @@ class _FilterBarState extends State<FilterBar> {
     final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context);
     
     Map<String, List<file_data.GeneralType>> dataForModel = {
-      // 使用从API获取的数据，如果获取失败则使用本地的（已在_fetchFilterOptions中处理）
-      'roomTypeList': _roomTypeListFromApi.isNotEmpty ? _roomTypeListFromApi : file_data.roomTypeList,
-      'orientedList': _orientedListFromApi.isNotEmpty ? _orientedListFromApi : file_data.orientedList,
-      'floorList': _floorListFromApi.isNotEmpty ? _floorListFromApi : file_data.floorList,
+      // 使用本地静态数据
+      'roomTypeList': file_data.roomTypeList, // Directly use static roomTypeList
+      'orientedList': file_data.orientedList, // Directly use static orientedList
+      'floorList': file_data.floorList, // Directly use static floorList
       'rentTypeList': _rentTypeListLocal, // 这些仍然使用本地或API更新后的本地变量
       'priceList': _priceListLocal,
       'tagList': _tagListLocal,

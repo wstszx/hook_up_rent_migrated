@@ -1439,16 +1439,32 @@ List<GeneralType> rentTypeList = [
   GeneralType('合租', '合租'),
 ];
 List<GeneralType> roomTypeList = [
-  GeneralType('房屋类型1', '11'),
-  GeneralType('房屋类型2', '22'),
+  GeneralType('不限', 'room_type_any'),
+  GeneralType('一室', 'room_type_1'),
+  GeneralType('二室', 'room_type_2'),
+  GeneralType('三室', 'room_type_3'),
+  GeneralType('四室', 'room_type_4'),
+  GeneralType('四室及以上', 'room_type_4_plus'),
 ];
 List<GeneralType> orientedList = [
-  GeneralType('方向1', '99'),
-  GeneralType('方向2', 'cc'),
+  GeneralType('不限', 'orientation_any'),
+  GeneralType('东', 'orientation_east'),
+  GeneralType('南', 'orientation_south'),
+  GeneralType('西', 'orientation_west'),
+  GeneralType('北', 'orientation_north'),
+  GeneralType('东南', 'orientation_southeast'),
+  GeneralType('西南', 'orientation_southwest'),
+  GeneralType('东北', 'orientation_northeast'),
+  GeneralType('西北', 'orientation_northwest'),
+  GeneralType('南北', 'orientation_south_north'),
+  GeneralType('东西', 'orientation_east_west'),
 ];
 List<GeneralType> floorList = [
-  GeneralType('楼层1', 'aa'),
-  GeneralType('楼层2', 'bb'),
+  GeneralType('不限', 'floor_any'),
+  GeneralType('1-5层', 'floor_1-5'),
+  GeneralType('6-10层', 'floor_6-10'),
+  GeneralType('11-15层', 'floor_11-15'),
+  GeneralType('15层以上', 'floor_15_plus'),
 ];
 
 // 标签列表
