@@ -8,13 +8,15 @@ class InfoItemWidget extends StatelessWidget {
   final InfoItem data;
 
   const InfoItemWidget({super.key, required this.data});
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 100,
-      padding: const EdgeInsets.only(left: 10, bottom: 10, right: 10),
-      child: Row(
+    return InkWell(      onTap: () {
+        Navigator.of(context).pushNamed('news_detail', arguments: {'data': data});
+      },
+      child: Container(
+        height: 100,
+        padding: const EdgeInsets.only(left: 10, bottom: 10, right: 10),
+        child: Row(
         children: [
           CommonImage(data.imageUrl, width: 120, height: 90),
           const Padding(padding: EdgeInsets.only(left: 10)),
@@ -39,9 +41,9 @@ class InfoItemWidget extends StatelessWidget {
                 )
               ],
             ),
-          )
-        ],
+          )        ],
       ),
+    ),
     );
   }
 }
