@@ -86,6 +86,27 @@ class DioHttp {
     var options = Options(headers: headers);
     return await _client!.delete<dynamic>(path, queryParameters: params, options: options);
   }
+
+  // Add new PUT request method
+  Future<Response<dynamic>> put(String path, {
+    dynamic data,
+    String? token,
+    Options? options,
+  }) async {
+    var requestOptions = options ?? Options();
+    var currentHeaders = requestOptions.headers ?? <String, dynamic>{};
+    if (token != null && token.isNotEmpty) {
+      currentHeaders['Authorization'] = 'Bearer $token';
+    }
+    requestOptions.headers = currentHeaders;
+
+    if (kDebugMode) {
+      print('[DioHttp][put] Request Path: $path');
+      print('[DioHttp][put] Request Headers: ${requestOptions.headers}');
+    }
+
+    return await _client!.put<dynamic>(path, data: data, options: requestOptions);
+  }
  
   // Method to fetch cities from the backend
   Future<List<GeneralType>> getCities({String? token}) async {

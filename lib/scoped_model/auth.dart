@@ -62,6 +62,18 @@ class AuthModel extends Model {
     _getUserInfo(context);
   }
 
+  // Method to allow external updates to userInfo, e.g., after profile edit
+  void updateUserInfo(UserInfo newInfo) {
+    _userInfo = newInfo;
+    notifyListeners();
+  }
+
+  Future<void> refreshUserInfo(BuildContext context) async {
+    if (_token.isNotEmpty) {
+      await _getUserInfo(context);
+    }
+  }
+ 
   void logout() {
     _token = '';
     _userInfo = null;

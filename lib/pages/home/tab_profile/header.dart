@@ -89,9 +89,14 @@ class Header extends StatelessWidget {
                 userName,
                 style: loginRegisterStyle,
               ),
-              const Text(
-                '查看编辑个人资料',
-                style: TextStyle(color: Colors.white),
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, 'profile_edit');
+                },
+                child: const Text(
+                  '查看编辑个人资料',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           )
