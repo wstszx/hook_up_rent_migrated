@@ -121,6 +121,11 @@ router.post('/', authMiddleware, (req, res, next) => {
         }
         console.log('Constructed Image Paths:', JSON.stringify(imagePaths, null, 2));
 
+        // Convert IDs to Chinese names before saving
+        const roomTypeName = roomTypeMap[roomType] || roomType; // Fallback to original if no map found
+        const floorName = floorMap[floor] || floor;             // Fallback to original if no map found
+        const orientationName = orientationMap[orientation] || orientation; // Fallback to original
+
         const newRoomData = {
             title,
             description: description || '',
@@ -128,16 +133,16 @@ router.post('/', authMiddleware, (req, res, next) => {
             city,
             district: district || '',
             address: address || '',
-            rentType,
-            roomType,
-            floor: floor || '',
-            orientation: orientation || '',
+            rentType, // rentType is already a Chinese string from frontend: _getRentTypeString(rentType)
+            roomType: roomTypeName,
+            floor: floorName || '', // Ensure floor is not undefined
+            orientation: orientationName || '', // Ensure orientation is not undefined
             images: imagePaths, // Storing relative paths
             tags: tags ? (Array.isArray(tags) ? tags : (typeof tags === 'string' ? tags.split(',').map(t=>t.trim()) : [tags])) : [], // Robust tag handling
             publisher: publisherId
             // location will be added conditionally below
         };
-        console.log('Initial Data for new Room() constructor (before location):', JSON.stringify(newRoomData, null, 2));
+        console.log('Initial Data for new Room() constructor (IDs converted to names, before location):', JSON.stringify(newRoomData, null, 2));
 
         // 处理地理位置信息
         // Add location field ONLY if valid coordinates are provided
