@@ -158,7 +158,50 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       print("Error toggling favorite: $e");
     }
   }
-
+ 
+  Future<void> _makeAppointment() async {
+    if (!_isItemInitialized) return;
+ 
+    final auth = ScopedModelHelper.getModel<AuthModel>(context);
+    if (!auth.isLogin) {
+      Navigator.of(context).pushNamed('login');
+      return;
+    }
+ 
+    if (item.id.isEmpty) {
+      CommonToast.showToast('无效的房源ID');
+      return;
+    }
+ 
+    // 可选：允许用户输入预约时间或备注
+    // final DateTime? appointmentTime = await showDatePicker(...);
+    // final String? notes = await showDialog(...); // 获取备注
+ 
+    try {
+      final String? token = auth.token;
+      final response = await DioHttp.of(context).post(
+        '${Config.BaseUrl}api/me/orders',
+        data: {
+          'roomId': item.id,
+          // 'appointmentTime': appointmentTime?.toIso8601String(), // 如果有选择时间
+          // 'notes': notes, // 如果有备注
+        },
+        token: token,
+      );
+ 
+      if (response.statusCode == 201) {
+        CommonToast.showToast('预约成功，已添加到我的订单');
+        // 可选：跳转到我的订单页面
+        // Navigator.of(context).pushNamed(Routes.myOrders);
+      } else {
+        CommonToast.showToast('预约失败: ${response.data?['message'] ?? '请稍后再试'}');
+      }
+    } catch (e) {
+      CommonToast.showToast('预约操作失败，请检查网络连接');
+      print("Error making appointment: $e");
+    }
+  }
+ 
   @override
   Widget build(BuildContext context) {
     if (!_isItemInitialized) {
@@ -315,7 +358,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                   const SizedBox(width: 10), // Spacing
                   Expanded(
                     child: ElevatedButton( // Using ElevatedButton
-                      onPressed: () => Navigator.pushNamed(context, 'test'), // Placeholder
+                      onPressed: _makeAppointment, // 调用新的预约方法
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                       child: Text('预约看房', style: bottomButtonTextStyle),
                     ),
