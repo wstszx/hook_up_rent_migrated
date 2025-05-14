@@ -4,7 +4,9 @@ import 'package:hook_up_rent/config.dart';
 // import 'package:hook_up_rent/widgets/common_image.dart'; // CommonImage is used within RoomListItemWidget
 import 'package:hook_up_rent/pages/home/tab_search/data_list.dart'; // Corrected import for RoomListItemData
 import 'package:hook_up_rent/widgets/root_list_item_widget.dart'; // 使用现有的房源列表项Widget
-
+import 'package:hook_up_rent/scoped_model/auth.dart';
+import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
+ 
 class RoomFavoritePage extends StatefulWidget {
   const RoomFavoritePage({super.key});
 
@@ -18,24 +20,56 @@ class _RoomFavoritePageState extends State<RoomFavoritePage> {
   @override
   void initState() {
     super.initState();
-    _fetchFavorites();
-  }
-
-  Future<void> _fetchFavorites() async {
-    // Ensure context is available and mounted before calling DioHttp.of(context)
-    if (!mounted) return;
-    setState(() {
-      _favoriteFuture = _getFavorites();
+    // Defer _fetchFavorites until after the first frame to ensure context is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) { // Check if the widget is still in the tree
+        _fetchFavorites();
+      }
     });
   }
+ 
+  Future<void> _fetchFavorites() async {
+    if (!mounted) return;
+    // Get AuthModel here as context should be ready
+    final auth = ScopedModelHelper.getModel<AuthModel>(context);
+    print('[RoomFavoritePage] Fetching favorites. IsLogin: ${auth.isLogin}, Token: ${auth.token}');
+    
+    if (!auth.isLogin) {
+      // If not logged in, set future to complete with an empty list or an error
+      // For now, let's complete with empty list and show "not logged in" message
+      // Or, navigate to login: Navigator.of(context).pushNamed('login');
+      // However, this page is typically accessed when logged in.
+      // If direct access is possible without login, handle appropriately.
+       setState(() {
+        _favoriteFuture = Future.value([]); // Or throw an error to show in FutureBuilder
+      });
+      print('[RoomFavoritePage] User not logged in. Not fetching favorites.');
+      return;
+    }
 
-  Future<List<RoomListItemData>> _getFavorites() async {
-    if (!mounted) return []; // Return empty list if not mounted
+    setState(() {
+      _favoriteFuture = _getFavorites(auth.token); // Pass token to _getFavorites
+    });
+  }
+ 
+  Future<List<RoomListItemData>> _getFavorites(String? token) async { // Accept token as parameter
+    if (!mounted) return [];
 
+    // Log the token being used for the API call
+    print('[RoomFavoritePage] _getFavorites called with token: $token');
+
+    if (token == null || token.isEmpty) {
+      print('[RoomFavoritePage] Token is null or empty. Cannot fetch favorites.');
+      // Optionally throw an exception to be caught by FutureBuilder
+      // throw Exception('User not authenticated.');
+      return []; // Return empty list if no token
+    }
+ 
     try {
-      // Corrected DioHttp call
       final response = await DioHttp.of(context).get(
         '${Config.BaseUrl}api/me/favorites',
+        null,
+        token,
       );
       if (response.statusCode == 200 && response.data != null) {
         List<dynamic> favoriteEntries = response.data as List<dynamic>;
@@ -46,15 +80,10 @@ class _RoomFavoritePageState extends State<RoomFavoritePage> {
             return RoomListItemData(
               id: entry['_id']?.toString() ?? 'unknown_fav_id_${DateTime.now().millisecondsSinceEpoch}',
               title: '无效的收藏房源',
-              subTitle: '该房源信息已失效', // Added subTitle for null roomData case
+              subTitle: '该房源信息已失效',
               imageUrl: 'static/images/loading.jpg',
               price: 0,
               tags: [],
-              // Ensure all required fields for RoomListItemData are provided
-              // Add default values for other fields if necessary, e.g., city, distance
-              city: '', // Default city
-              distance: 0, // Default distance
-              seeAddress: '', // Default seeAddress
             );
           }
           // Ensure imageUrl is correctly formed
@@ -74,14 +103,10 @@ class _RoomFavoritePageState extends State<RoomFavoritePage> {
           return RoomListItemData(
             id: roomData['_id']?.toString() ?? entry['_id']?.toString() ?? 'unknown_room_id_${DateTime.now().millisecondsSinceEpoch}',
             title: roomData['title'] ?? '未知标题',
-            subTitle: '${roomData['district'] ?? '未知区域'} - ${roomData['roomType'] ?? '未知户型'}',
+            subTitle: '${roomData['district'] ?? '未知区域'} - ${roomData['roomType'] ?? '未知户型'} ${roomData['city'] != null ? '('+roomData['city']+')' : ''}', // City info can be part of subtitle
             imageUrl: imageUrl,
             price: (roomData['price'] as num?)?.toInt() ?? 0, // Ensure price is int
             tags: roomData['rentType'] != null ? [roomData['rentType'] as String] : [],
-            // Provide defaults for other potentially missing fields if RoomListItemData requires them
-            city: roomData['city'] ?? '',
-            distance: (roomData['distance'] as num?)?.toDouble() ?? 0.0, // Example, adjust as needed
-            seeAddress: roomData['address'] ?? '', // Example, adjust as needed
           );
         }).toList();
         return mappedFavorites;

@@ -3,7 +3,7 @@ import 'models/general_type.dart';
 class Config {
   static const CommonIcon = 'CommonIcon';
   static const BaseUrl =
-      'http://192.168.1.4:3000'; // <-- 请将 YOUR_COMPUTER_IP 替换为您的实际IP地址
+      'http://192.168.1.4:3000/'; // <-- 请将 YOUR_COMPUTER_IP 替换为您的实际IP地址
   static const DefaultImage = 'https://via.placeholder.com/150/CCCCCC/FFFFFF?Text=No+Image';
 
 

@@ -70,7 +70,12 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     }
     try {
       // 使用 DioHttp.of(context).get
-      final response = await DioHttp.of(context).get('${Config.BaseUrl}api/me/favorites');
+      final String? token = auth.token; // Get token from AuthModel
+      final response = await DioHttp.of(context).get(
+        '${Config.BaseUrl}api/me/favorites',
+        null, // params
+        token, // Pass token
+      );
       if (response.statusCode == 200 && response.data != null) {
         List<dynamic> favorites = response.data as List<dynamic>;
         if (mounted) {
@@ -113,8 +118,11 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
     try {
       if (isLike) { // Currently liked, so unlike
         // 使用 DioHttp.of(context).delete
+        final String? token = auth.token; // Get token
         final response = await DioHttp.of(context).delete(
           '${Config.BaseUrl}api/me/favorites/${item.id}',
+          null, // params
+          token, // Pass token
         );
         if (response.statusCode == 200) {
           if (mounted) {
@@ -128,9 +136,11 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         }
       } else { // Currently not liked, so like
         // 使用 DioHttp.of(context).post
+        final String? token = auth.token; // Get token
         final response = await DioHttp.of(context).post(
           '${Config.BaseUrl}api/me/favorites',
           data: {'roomId': item.id},
+          token: token, // Pass token
         );
         if (response.statusCode == 201) {
           if (mounted) {
