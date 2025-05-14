@@ -6,7 +6,12 @@ import 'package:hook_up_rent/widgets/common_tag.dart';
 import 'package:hook_up_rent/widgets/common_title.dart';
 import 'package:hook_up_rent/widgets/room_appliance.dart';
 import 'package:share_plus/share_plus.dart';
-
+import 'package:hook_up_rent/pages/utils/dio_http.dart';
+import 'package:hook_up_rent/config.dart';
+import 'package:hook_up_rent/scoped_model/auth.dart';
+import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
+import 'package:hook_up_rent/pages/utils/common_toast.dart';
+ 
 class RoomDetailPage extends StatefulWidget {
   const RoomDetailPage({Key? key}) : super(key: key);
 
@@ -18,14 +23,129 @@ var bottomButtonTextStyle = const TextStyle(color: Colors.white, fontSize: 18);
 
 class _RoomDetailPageState extends State<RoomDetailPage> {
   bool isLike = false; // 是否收藏
+  bool _isLoadingFavoriteStatus = true; // 加载收藏状态
   bool showAllText = false; // 是否展开
-
+  late RoomListItemData item; // 在 initState 中初始化
+ 
+  @override
+  void initState() {
+    super.initState();
+    // WidgetsBinding.instance.addPostFrameCallback ensures that ModalRoute.of(context) is available.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ModalRoute.of(context)!.settings.arguments != null) {
+        item = ModalRoute.of(context)!.settings.arguments as RoomListItemData;
+        _checkFavoriteStatus();
+        if (mounted) { // Ensure the widget is still in the tree
+          setState(() {}); // Trigger a rebuild if item is now available
+        }
+      }
+    });
+  }
+ 
+  Future<void> _checkFavoriteStatus() async {
+    final auth = ScopedModelHelper.getModel<AuthModel>(context);
+    if (!auth.isLogin || item.id == null) {
+      setState(() {
+        isLike = false;
+        _isLoadingFavoriteStatus = false;
+      });
+      return;
+    }
+    try {
+      final response = await DioHttp.instance.getRequest('${Config.BaseUrl}api/me/favorites');
+      if (response.statusCode == 200 && response.data != null) {
+        List<dynamic> favorites = response.data as List<dynamic>;
+        if (mounted) {
+          setState(() {
+            isLike = favorites.any((fav) => fav['room'] != null && fav['room']['_id'] == item.id);
+            _isLoadingFavoriteStatus = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoadingFavoriteStatus = false;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error checking favorite status: $e");
+      if (mounted) {
+        setState(() {
+          _isLoadingFavoriteStatus = false;
+        });
+      }
+    }
+  }
+ 
+  Future<void> _toggleFavorite() async {
+    final auth = ScopedModelHelper.getModel<AuthModel>(context);
+    if (!auth.isLogin) {
+      Navigator.of(context).pushNamed('login');
+      return;
+    }
+ 
+    if (item.id == null) {
+      CommonToast.showToast('无效的房源ID');
+      return;
+    }
+ 
+    try {
+      if (isLike) { // Currently liked, so unlike
+        final response = await DioHttp.instance.deleteRequest(
+          '${Config.BaseUrl}api/me/favorites/${item.id}',
+        );
+        if (response.statusCode == 200) {
+          if (mounted) {
+            setState(() {
+              isLike = false;
+            });
+          }
+          CommonToast.showToast('已取消收藏');
+        } else {
+          CommonToast.showToast('取消收藏失败: ${response.data?['message'] ?? '请稍后再试'}');
+        }
+      } else { // Currently not liked, so like
+        final response = await DioHttp.instance.postRequest(
+          '${Config.BaseUrl}api/me/favorites',
+          data: {'roomId': item.id},
+        );
+        if (response.statusCode == 201) {
+          if (mounted) {
+            setState(() {
+              isLike = true;
+            });
+          }
+          CommonToast.showToast('收藏成功');
+        } else {
+          CommonToast.showToast('收藏失败: ${response.data?['message'] ?? '请稍后再试'}');
+        }
+      }
+    } catch (e) {
+      CommonToast.showToast('操作失败，请检查网络连接');
+      print("Error toggling favorite: $e");
+    }
+  }
+ 
   @override
   Widget build(BuildContext context) {
-    // 获取通过路由传递过来参数
-    final item = ModalRoute.of(context)!.settings.arguments as RoomListItemData;
-    final showTextTool = item.subTitle.length > 100; // 使用 item.subTitle
+    // Ensure item is initialized before building UI that depends on it.
+    // This check is important if initState's postFrameCallback hasn't run yet or item wasn't passed.
+    if (ModalRoute.of(context)?.settings.arguments == null && !this::item.isInitialized) {
+        // If arguments are null and item is not initialized, show loading or error.
+        // This scenario should ideally be handled by a loading screen or an error message
+        // if item is critical for the page. For now, returning an empty container.
+        return Scaffold(appBar: AppBar(title: const Text("房源详情")), body: const Center(child: Text("加载中或房源信息错误...")));
+    }
+    // If item is not initialized yet but arguments are present, it means initState is about to set it.
+    // A temporary loading state can be shown.
+     if (!this::item.isInitialized) {
+        item = ModalRoute.of(context)!.settings.arguments as RoomListItemData;
+     }
 
+
+    final showTextTool = item.subTitle.length > 100;
+ 
     return Scaffold(
       appBar: AppBar(
         title: Text(item.title), // 使用 item.title 作为 AppBar 标题，或者保持 item.id
@@ -137,17 +257,21 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                       width: 60,
                       margin: const EdgeInsets.only(right: 10),
                       child: GestureDetector(
-                        onTap: () => setState(() {
-                          isLike = !isLike;
-                        }),
+                        onTap: _isLoadingFavoriteStatus ? null : _toggleFavorite, // Disable while loading status
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              isLike ? Icons.star : Icons.star_border,
-                              color: isLike ? Colors.green : Colors.black,
-                              size: 24,
-                            ),
+                            _isLoadingFavoriteStatus
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Icon(
+                                    isLike ? Icons.star : Icons.star_border,
+                                    color: isLike ? Colors.green : Colors.black,
+                                    size: 24,
+                                  ),
                             Text(
                               isLike ? '已收藏' : '收藏',
                               style: const TextStyle(fontSize: 12),
