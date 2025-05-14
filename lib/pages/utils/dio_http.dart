@@ -75,7 +75,18 @@ class DioHttp {
     var options = Options(headers: headers);
     return await _client!.post<dynamic>(path, data: FormData.fromMap(params ?? {}), options: options);
   }
-
+ 
+  // delete请求
+  Future<Response<dynamic>> delete(String path,
+      [Map<String, dynamic>? params, String? token]) async {
+    var headers = <String, dynamic>{};
+    if (token != null && token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    var options = Options(headers: headers);
+    return await _client!.delete<dynamic>(path, queryParameters: params, options: options);
+  }
+ 
   // Method to fetch cities from the backend
   Future<List<GeneralType>> getCities({String? token}) async {
     if (kDebugMode) {

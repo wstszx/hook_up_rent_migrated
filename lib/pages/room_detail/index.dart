@@ -11,7 +11,7 @@ import 'package:hook_up_rent/config.dart';
 import 'package:hook_up_rent/scoped_model/auth.dart';
 import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
 import 'package:hook_up_rent/pages/utils/common_toast.dart';
- 
+
 class RoomDetailPage extends StatefulWidget {
   const RoomDetailPage({Key? key}) : super(key: key);
 
@@ -25,34 +25,52 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   bool isLike = false; // 是否收藏
   bool _isLoadingFavoriteStatus = true; // 加载收藏状态
   bool showAllText = false; // 是否展开
-  late RoomListItemData item; // 在 initState 中初始化
- 
+  late RoomListItemData item;
+  bool _isItemInitialized = false; // 标记 item 是否已初始化
+
   @override
   void initState() {
     super.initState();
-    // WidgetsBinding.instance.addPostFrameCallback ensures that ModalRoute.of(context) is available.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (ModalRoute.of(context)!.settings.arguments != null) {
-        item = ModalRoute.of(context)!.settings.arguments as RoomListItemData;
+      final arguments = ModalRoute.of(context)?.settings.arguments;
+      if (arguments != null && arguments is RoomListItemData) {
+        item = arguments;
+        _isItemInitialized = true; // 标记 item 已初始化
         _checkFavoriteStatus();
-        if (mounted) { // Ensure the widget is still in the tree
-          setState(() {}); // Trigger a rebuild if item is now available
+        if (mounted) {
+          setState(() {}); // 触发重建以使用 item
         }
+      } else {
+        // 处理参数错误或缺失的情况
+        if (mounted) {
+          setState(() {
+            _isItemInitialized = false; // 标记 item 未成功初始化
+            _isLoadingFavoriteStatus = false; // 也停止加载收藏状态
+          });
+        }
+        print("Error: RoomListItemData not passed as argument or argument is null.");
+        // Optionally, navigate back or show an error message
       }
     });
   }
- 
+
   Future<void> _checkFavoriteStatus() async {
+    if (!_isItemInitialized) return; // 如果 item 未初始化，则不执行
+
     final auth = ScopedModelHelper.getModel<AuthModel>(context);
-    if (!auth.isLogin || item.id == null) {
-      setState(() {
-        isLike = false;
-        _isLoadingFavoriteStatus = false;
-      });
+    // item.id can be null if RoomListItemData allows it, ensure to handle
+    if (!auth.isLogin || item.id.isEmpty) { // Assuming id is String and checking for empty
+      if (mounted) {
+        setState(() {
+          isLike = false;
+          _isLoadingFavoriteStatus = false;
+        });
+      }
       return;
     }
     try {
-      final response = await DioHttp.instance.getRequest('${Config.BaseUrl}api/me/favorites');
+      // 使用 DioHttp.of(context).get
+      final response = await DioHttp.of(context).get('${Config.BaseUrl}api/me/favorites');
       if (response.statusCode == 200 && response.data != null) {
         List<dynamic> favorites = response.data as List<dynamic>;
         if (mounted) {
@@ -77,22 +95,25 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       }
     }
   }
- 
+
   Future<void> _toggleFavorite() async {
+    if (!_isItemInitialized) return; // 如果 item 未初始化，则不执行
+
     final auth = ScopedModelHelper.getModel<AuthModel>(context);
     if (!auth.isLogin) {
       Navigator.of(context).pushNamed('login');
       return;
     }
- 
-    if (item.id == null) {
+
+    if (item.id.isEmpty) { // Assuming id is String and checking for empty
       CommonToast.showToast('无效的房源ID');
       return;
     }
- 
+
     try {
       if (isLike) { // Currently liked, so unlike
-        final response = await DioHttp.instance.deleteRequest(
+        // 使用 DioHttp.of(context).delete
+        final response = await DioHttp.of(context).delete(
           '${Config.BaseUrl}api/me/favorites/${item.id}',
         );
         if (response.statusCode == 200) {
@@ -106,7 +127,8 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
           CommonToast.showToast('取消收藏失败: ${response.data?['message'] ?? '请稍后再试'}');
         }
       } else { // Currently not liked, so like
-        final response = await DioHttp.instance.postRequest(
+        // 使用 DioHttp.of(context).post
+        final response = await DioHttp.of(context).post(
           '${Config.BaseUrl}api/me/favorites',
           data: {'roomId': item.id},
         );
@@ -126,32 +148,25 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       print("Error toggling favorite: $e");
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
-    // Ensure item is initialized before building UI that depends on it.
-    // This check is important if initState's postFrameCallback hasn't run yet or item wasn't passed.
-    if (ModalRoute.of(context)?.settings.arguments == null && !this::item.isInitialized) {
-        // If arguments are null and item is not initialized, show loading or error.
-        // This scenario should ideally be handled by a loading screen or an error message
-        // if item is critical for the page. For now, returning an empty container.
-        return Scaffold(appBar: AppBar(title: const Text("房源详情")), body: const Center(child: Text("加载中或房源信息错误...")));
+    if (!_isItemInitialized) {
+      // 如果 item 未初始化 (例如，路由参数问题或 initState 回调尚未完成)
+      return Scaffold(
+        appBar: AppBar(title: const Text("房源详情")),
+        body: const Center(child: CircularProgressIndicator()), // 显示加载指示器
+      );
     }
-    // If item is not initialized yet but arguments are present, it means initState is about to set it.
-    // A temporary loading state can be shown.
-     if (!this::item.isInitialized) {
-        item = ModalRoute.of(context)!.settings.arguments as RoomListItemData;
-     }
-
 
     final showTextTool = item.subTitle.length > 100;
- 
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(item.title), // 使用 item.title 作为 AppBar 标题，或者保持 item.id
+        title: Text(item.title),
         actions: [
           IconButton(
-            onPressed: () => Share.share('https://www.baidu.com'),
+            onPressed: () => Share.share('https://www.baidu.com'), // 示例分享链接
             icon: const Icon(Icons.share),
           )
         ],
@@ -160,19 +175,19 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         children: [
           ListView(
             children: [
-              CommonSwiper(images: [item.imageUrl]), // 使用 item.imageUrl
-              CommonTitle(item.title), // 使用 item.title
+              CommonSwiper(images: [item.imageUrl]),
+              CommonTitle(item.title),
               Container(
                 padding: const EdgeInsets.only(left: 10),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      item.price.toString(), // 使用 item.price
+                      item.price.toString(),
                       style: const TextStyle(fontSize: 20, color: Colors.pink),
                     ),
                     const Text(
-                      '元/月', // 简化租金描述，因为 RoomListItemData 没有押付信息
+                      '元/月',
                       style: TextStyle(fontSize: 14, color: Colors.pink),
                     ),
                   ],
@@ -182,7 +197,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                 padding: const EdgeInsets.only(left: 10, top: 6, bottom: 6),
                 child: Wrap(
                   spacing: 4,
-                  children: item.tags.map((tag) => CommonTag(tag)).toList(), // 使用 item.tags
+                  children: item.tags.map((tag) => CommonTag(tag)).toList(),
                 ),
               ),
               const Divider(color: Colors.grey, indent: 10, endIndent: 10),
@@ -191,21 +206,21 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                 child: Wrap(
                   runSpacing: 10,
                   children: [
-                    const BaseInfoItem('面积：暂无数据'), // RoomListItemData 没有 size
-                    const BaseInfoItem('楼层：详见描述'), // RoomListItemData 没有独立的 floor
-                    const BaseInfoItem('户型：详见描述'), // RoomListItemData 没有独立的 roomType
-                    const BaseInfoItem('装修：精装'), // 假设默认精装，或可考虑移除/设为暂无
+                    const BaseInfoItem('面积：暂无数据'),
+                    const BaseInfoItem('楼层：详见描述'),
+                    const BaseInfoItem('户型：详见描述'),
+                    const BaseInfoItem('装修：精装'),
                   ],
                 ),
               ),
               const CommonTitle('房屋配置'),
-              RoomApplicanceList(const []), // RoomListItemData 没有 applicances
+              RoomApplicanceList(const []), // 假设没有 appliance 数据
               const CommonTitle('房屋概况'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Column(
                   children: [
-                    Text(item.subTitle, maxLines: showAllText ? null : 5), // 使用 item.subTitle, 调整 maxLines 逻辑
+                    Text(item.subTitle, maxLines: showAllText ? null : 5),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -216,18 +231,17 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                             }),
                             child: Row(
                               children: [
-                                Text(showAllText ? '收起' : '展开'), // 调整展开/收起文本
+                                Text(showAllText ? '收起' : '展开'),
                                 Icon(showAllText
                                     ? Icons.keyboard_arrow_up
-                                    : Icons.keyboard_arrow_down) // 调整图标
+                                    : Icons.keyboard_arrow_down)
                               ],
                             ),
                           )
                         else
-                          Container(), // 保留占位，避免布局跳动
-                        TextButton( // 使用 TextButton 增加点击区域和视觉反馈
+                          Container(),
+                        TextButton(
                             onPressed: () {
-                              // TODO: 实现举报功能或导航到举报页面
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(content: Text('举报功能暂未实现')),
                               );
@@ -240,7 +254,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
               ),
               const CommonTitle('猜你喜欢'),
               Info(),
-              const SizedBox(height: 100),
+              const SizedBox(height: 100), // 为底部按钮留出空间
             ],
           ),
           Positioned(
@@ -249,68 +263,51 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             bottom: 0,
             child: Container(
               color: Colors.grey[200],
+              padding: const EdgeInsets.all(10), // 统一内边距
               child: Row(
                 children: [
                   GestureDetector(
+                     onTap: _isLoadingFavoriteStatus ? null : _toggleFavorite,
                     child: Container(
-                      height: 50,
-                      width: 60,
-                      margin: const EdgeInsets.only(right: 10),
-                      child: GestureDetector(
-                        onTap: _isLoadingFavoriteStatus ? null : _toggleFavorite, // Disable while loading status
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _isLoadingFavoriteStatus
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : Icon(
-                                    isLike ? Icons.star : Icons.star_border,
-                                    color: isLike ? Colors.green : Colors.black,
-                                    size: 24,
-                                  ),
-                            Text(
-                              isLike ? '已收藏' : '收藏',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ],
-                        ),
+                      // Removed fixed width to allow flexibility or define it if necessary
+                      padding: const EdgeInsets.symmetric(horizontal: 10), // Add padding for tap area
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _isLoadingFavoriteStatus
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : Icon(
+                                  isLike ? Icons.star : Icons.star_border,
+                                  color: isLike ? Colors.green : Colors.black,
+                                  size: 24,
+                                ),
+                          const SizedBox(height: 4), // Spacing
+                          Text(
+                            isLike ? '已收藏' : '收藏',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
                       ),
                     ),
                   ),
+                  const SizedBox(width: 10), // Spacing between buttons
                   Expanded(
-                    child: GestureDetector(
-                      onTap: (() => Navigator.pushNamed(context, 'test')),
-                      child: Container(
-                        height: 50,
-                        margin: const EdgeInsets.only(right: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.cyan,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text('联系房东', style: bottomButtonTextStyle),
-                        ),
-                      ),
+                    child: ElevatedButton( // Using ElevatedButton for better semantics and styling
+                      onPressed: () => Navigator.pushNamed(context, 'test'), // Placeholder
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
+                      child: Text('联系房东', style: bottomButtonTextStyle),
                     ),
                   ),
+                  const SizedBox(width: 10), // Spacing
                   Expanded(
-                    child: GestureDetector(
-                      onTap: (() => Navigator.pushNamed(context, 'test')),
-                      child: Container(
-                        height: 50,
-                        margin: const EdgeInsets.only(right: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text('预约看房', style: bottomButtonTextStyle),
-                        ),
-                      ),
+                    child: ElevatedButton( // Using ElevatedButton
+                      onPressed: () => Navigator.pushNamed(context, 'test'), // Placeholder
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                      child: Text('预约看房', style: bottomButtonTextStyle),
                     ),
                   ),
                 ],
@@ -331,7 +328,7 @@ class BaseInfoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: (MediaQuery.of(context).size.width - 3 * 10) / 2,
+      width: (MediaQuery.of(context).size.width - 3 * 10) / 2, // Adjust width calculation if padding changes
       child: Text(content),
     );
   }

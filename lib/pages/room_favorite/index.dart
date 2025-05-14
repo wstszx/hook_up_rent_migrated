@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hook_up_rent/pages/utils/dio_http.dart';
 import 'package:hook_up_rent/config.dart';
-import 'package:hook_up_rent/widgets/common_image.dart';
+// import 'package:hook_up_rent/widgets/common_image.dart'; // CommonImage is used within RoomListItemWidget
 import 'package:hook_up_rent/pages/home/tab_search/data_list.dart'; // Corrected import for RoomListItemData
 import 'package:hook_up_rent/widgets/root_list_item_widget.dart'; // 使用现有的房源列表项Widget
 
@@ -22,57 +22,77 @@ class _RoomFavoritePageState extends State<RoomFavoritePage> {
   }
 
   Future<void> _fetchFavorites() async {
+    // Ensure context is available and mounted before calling DioHttp.of(context)
+    if (!mounted) return;
     setState(() {
       _favoriteFuture = _getFavorites();
     });
   }
 
   Future<List<RoomListItemData>> _getFavorites() async {
+    if (!mounted) return []; // Return empty list if not mounted
+
     try {
-      final response = await DioHttp.instance.getRequest(
-        '${Config.BaseUrl}api/me/favorites', // 确保Config.BaseUrl末尾有/或者这里api前没有/
-        // 如果需要token，DioHttp 实例应该已经处理了
+      // Corrected DioHttp call
+      final response = await DioHttp.of(context).get(
+        '${Config.BaseUrl}api/me/favorites',
       );
       if (response.statusCode == 200 && response.data != null) {
         List<dynamic> favoriteEntries = response.data as List<dynamic>;
-        // 后端返回的是 Favorite 对象的列表，每个对象包含一个 room 字段
-        // 我们需要提取 room 字段并转换为 RoomListItemData
-        return favoriteEntries.map((entry) {
-          // 假设 entry['room'] 包含房源的完整信息
-          // 并且 RoomListItemData.fromJson 可以处理这个结构
-          // 如果 RoomListItemData.fromJson 需要的是房源本身，而不是 Favorite 条目，需要调整
-          // 后端返回的 room 结构: 'title price city district images rentType roomType status'
-          // RoomListItemData 需要 id, title, subTitle, imageUrl, price, distance, tags, seeAddress, city
-          // 需要进行适配
+        
+        List<RoomListItemData> mappedFavorites = favoriteEntries.map<RoomListItemData>((entry) {
           var roomData = entry['room'];
           if (roomData == null) {
-            // 处理 room 为 null 的情况，例如房源已被删除但收藏记录还在
             return RoomListItemData(
-              id: entry['_id'] ?? 'unknown_fav_id', // 使用收藏记录的ID作为备用
+              id: entry['_id']?.toString() ?? 'unknown_fav_id_${DateTime.now().millisecondsSinceEpoch}',
               title: '无效的收藏房源',
-              imageUrl: 'static/images/loading.jpg', // 默认图片
+              subTitle: '该房源信息已失效', // Added subTitle for null roomData case
+              imageUrl: 'static/images/loading.jpg',
               price: 0,
               tags: [],
+              // Ensure all required fields for RoomListItemData are provided
+              // Add default values for other fields if necessary, e.g., city, distance
+              city: '', // Default city
+              distance: 0, // Default distance
+              seeAddress: '', // Default seeAddress
             );
           }
+          // Ensure imageUrl is correctly formed
+          String imageUrl = 'static/images/loading.jpg'; // Default image
+          if (roomData['images'] != null && (roomData['images'] as List).isNotEmpty) {
+            String rawImageUrl = (roomData['images'] as List)[0] as String;
+            if (rawImageUrl.startsWith('http')) {
+              imageUrl = rawImageUrl;
+            } else {
+              // Ensure Config.BaseUrl ends with a slash if rawImageUrl doesn't start with one
+              String baseUrl = Config.BaseUrl.endsWith('/') ? Config.BaseUrl : '${Config.BaseUrl}/';
+              String imagePath = rawImageUrl.startsWith('/') ? rawImageUrl.substring(1) : rawImageUrl;
+              imageUrl = baseUrl + imagePath;
+            }
+          }
+
           return RoomListItemData(
-            id: roomData['_id'] ?? entry['_id'], // 优先使用房源ID
+            id: roomData['_id']?.toString() ?? entry['_id']?.toString() ?? 'unknown_room_id_${DateTime.now().millisecondsSinceEpoch}',
             title: roomData['title'] ?? '未知标题',
             subTitle: '${roomData['district'] ?? '未知区域'} - ${roomData['roomType'] ?? '未知户型'}',
-            imageUrl: (roomData['images'] != null && (roomData['images'] as List).isNotEmpty)
-                ? Config.BaseUrl + (roomData['images'] as List)[0] // 假设 images 是一个字符串列表
-                : 'static/images/loading.jpg', // 默认图片
-            price: roomData['price'] ?? 0,
-            tags: roomData['rentType'] != null ? [roomData['rentType']] : [], // 简单示例
-            // distance, seeAddress, city 等字段可能需要进一步处理或来自其他地方
+            imageUrl: imageUrl,
+            price: (roomData['price'] as num?)?.toInt() ?? 0, // Ensure price is int
+            tags: roomData['rentType'] != null ? [roomData['rentType'] as String] : [],
+            // Provide defaults for other potentially missing fields if RoomListItemData requires them
+            city: roomData['city'] ?? '',
+            distance: (roomData['distance'] as num?)?.toDouble() ?? 0.0, // Example, adjust as needed
+            seeAddress: roomData['address'] ?? '', // Example, adjust as needed
           );
         }).toList();
+        return mappedFavorites;
       } else {
         throw Exception('Failed to load favorites: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching favorites: $e');
-      throw Exception('Failed to load favorites: $e');
+      // It's better to let FutureBuilder handle the error state
+      // by rethrowing or returning a future that completes with an error.
+      rethrow; // Rethrow the exception to be caught by FutureBuilder
     }
   }
 
@@ -96,7 +116,7 @@ class _RoomFavoritePageState extends State<RoomFavoritePage> {
                   Text('加载失败: ${snapshot.error}'),
                   const SizedBox(height: 10),
                   ElevatedButton(
-                    onPressed: _fetchFavorites,
+                    onPressed: _fetchFavorites, // Retry fetching
                     child: const Text('重试'),
                   ),
                 ],
@@ -108,10 +128,8 @@ class _RoomFavoritePageState extends State<RoomFavoritePage> {
               itemCount: favorites.length,
               itemBuilder: (context, index) {
                 final favoriteRoom = favorites[index];
-                // 使用 RoomListItemWidget 来展示每个收藏的房源
-                // 注意：RoomListItemWidget 可能需要一个 RoomListItemData 类型的对象
-                // 或者你可以创建一个新的 Widget 来专门展示收藏项
-                return RoomListItemWidget(favoriteRoom);
+                // Corrected RoomListItemWidget call
+                return RoomListItemWidget(data: favoriteRoom);
               },
             );
           } else {
