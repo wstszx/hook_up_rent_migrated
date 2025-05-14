@@ -7,6 +7,39 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// --- Mappings from ID to Chinese Name (mirroring frontend data) ---
+const roomTypeMap = {
+  'room_type_any': '不限', //  '不限' should be handled by not adding the filter
+  'room_type_1': '一室',
+  'room_type_2': '二室',
+  'room_type_3': '三室',
+  'room_type_4': '四室',
+  'room_type_4_plus': '四室及以上',
+};
+
+const orientationMap = {
+  'orientation_any': '不限',
+  'orientation_east': '东',
+  'orientation_south': '南',
+  'orientation_west': '西',
+  'orientation_north': '北',
+  'orientation_southeast': '东南',
+  'orientation_southwest': '西南',
+  'orientation_northeast': '东北',
+  'orientation_northwest': '西北',
+  'orientation_south_north': '南北',
+  'orientation_east_west': '东西',
+};
+
+const floorMap = {
+  'floor_any': '不限',
+  'floor_1-5': '1-5层',
+  'floor_6-10': '6-10层',
+  'floor_11-15': '11-15层',
+  'floor_15_plus': '15层以上',
+};
+// --- End Mappings ---
+
 // --- Multer Configuration for Image Uploads ---
 const UPLOAD_DIR_ROOMS = path.join(process.cwd(), 'server/uploads/images/rooms');
 
@@ -230,14 +263,26 @@ router.get('/', async (req, res) => {
             queryConditions.price = { ...queryConditions.price, $lte: effectiveMaxPrice };
         }
 
-        if (roomType && roomType.toLowerCase() !== '不限') {
-            queryConditions.roomType = { $regex: roomType, $options: 'i' };
+        if (roomType && roomType.toLowerCase() !== 'room_type_any') { // Check against 'any' ID
+            const roomTypeIds = roomType.split(',').map(rt => rt.trim()).filter(rt => rt.length > 0);
+            const roomTypeNames = roomTypeIds.map(id => roomTypeMap[id]).filter(name => name && name !== '不限');
+            if (roomTypeNames.length > 0) {
+                queryConditions.roomType = { $in: roomTypeNames };
+            }
         }
-        if (orientation && orientation.toLowerCase() !== '不限') {
-            queryConditions.orientation = new RegExp(`^${orientation}$`, 'i');
+        if (orientation && orientation.toLowerCase() !== 'orientation_any') { // Check against 'any' ID
+            const orientationIds = orientation.split(',').map(o => o.trim()).filter(o => o.length > 0);
+            const orientationNames = orientationIds.map(id => orientationMap[id]).filter(name => name && name !== '不限');
+            if (orientationNames.length > 0) {
+                queryConditions.orientation = { $in: orientationNames };
+            }
         }
-        if (floor && floor.toLowerCase() !== '不限') {
-            queryConditions.floor = { $regex: floor, $options: 'i' };
+        if (floor && floor.toLowerCase() !== 'floor_any') { // Check against 'any' ID
+            const floorIds = floor.split(',').map(f => f.trim()).filter(f => f.length > 0);
+            const floorNames = floorIds.map(id => floorMap[id]).filter(name => name && name !== '不限');
+            if (floorNames.length > 0) {
+                queryConditions.floor = { $in: floorNames };
+            }
         }
         if (tags) {
             const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);

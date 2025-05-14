@@ -4,6 +4,35 @@ const connectDB = require('./config/db');
 const User = require('./models/User');
 const Room = require('./models/Room');
 
+// 前端筛选器定义 (来自 lib/pages/home/tab_search/filter_bar/data.dart)
+const frontendRoomTypes = [
+  { id: 'room_type_1', name: '一室' },
+  { id: 'room_type_2', name: '二室' },
+  { id: 'room_type_3', name: '三室' },
+  { id: 'room_type_4', name: '四室' },
+  { id: 'room_type_4_plus', name: '四室及以上' },
+];
+
+const frontendOrientations = [
+  { id: 'orientation_east', name: '东' },
+  { id: 'orientation_south', name: '南' },
+  { id: 'orientation_west', name: '西' },
+  { id: 'orientation_north', name: '北' },
+  { id: 'orientation_southeast', name: '东南' },
+  { id: 'orientation_southwest', name: '西南' },
+  { id: 'orientation_northeast', name: '东北' },
+  { id: 'orientation_northwest', name: '西北' },
+  { id: 'orientation_south_north', name: '南北' },
+  { id: 'orientation_east_west', name: '东西' },
+];
+
+const frontendFloors = [
+  { id: 'floor_1-5', name: '1-5层' },
+  { id: 'floor_6-10', name: '6-10层' },
+  { id: 'floor_11-15', name: '11-15层' },
+  { id: 'floor_15_plus', name: '15层以上' },
+];
+
 // --- 从 rental-app/lib/generate-properties.ts 迁移的常量和函数 ---
 
 // 房源类型 (注意：Room模型中rentType只有 '整租', '合租')
@@ -12,8 +41,8 @@ const propertyTypes = ["整租", "合租", "短租"]; // 我们会在映射时�
 // 装修类型
 const decorationTypes = ["精装修", "简装修", "豪华装修", "毛坯房", "中等装修"];
 
-// 朝向
-const orientations = ["朝南", "朝北", "朝东", "朝西", "东南", "西南", "东北", "西北", "南北通透"];
+// 朝向 (此处的orientations将不再用于生成Room.orientation，而是使用frontendOrientationIds)
+// const orientations = ["朝南", "朝北", "朝东", "朝西", "东南", "西南", "东北", "西北", "南北通透"];
 
 // 付款方式 (Room模型中没有此字段，如果需要可以添加)
 // const paymentTypes = ["押一付一", "押一付三", "押二付三", "押一付六", "年付"];
@@ -482,22 +511,17 @@ function generateRoomData(id, publisherId, specificCityName, specificDistrictNam
   const halls = Math.floor(Math.random() * 2);   // 0到1厅
   const bathrooms = Math.floor(Math.random() * 2) + 1; // 1到2卫
 
-  let roomTypeString = '';
-  if (rooms === 1 && halls === 0 && bathrooms === 1) roomTypeString = 'Studio';
-  else if (rooms > 0) {
-    roomTypeString = `${rooms}室`;
-    if (halls > 0) roomTypeString += `${halls}厅`;
-    if (bathrooms > 0) roomTypeString += `${bathrooms}卫`;
-  } else {
-    roomTypeString = '未知户型';
-  }
+  // 使用 frontendRoomTypes 生成 roomType (中文名)
+  const selectedRoomType = frontendRoomTypes[Math.floor(Math.random() * frontendRoomTypes.length)];
 
-
+  // area 的生成可以保留
   const area = Math.floor(Math.random() * (rooms * 35 + 50)) + rooms * 20 + 30; // 面积更合理些
 
-  const totalFloors = Math.floor(Math.random() * 28) + 3; // 3到30层
-  const floorNumber = Math.floor(Math.random() * totalFloors) + 1;
-  const floor = `${floorNumber}/${totalFloors}层`;
+  // 使用 frontendFloors 生成 floor (中文名)
+  const selectedFloor = frontendFloors[Math.floor(Math.random() * frontendFloors.length)];
+
+  // 使用 frontendOrientations 生成 orientation (中文名)
+  const selectedOrientation = frontendOrientations[Math.floor(Math.random() * frontendOrientations.length)];
 
   const basePrice = 1500 + rooms * 1200 + area * 15 + (cityName === "北京" || cityName === "上海" || cityName === "深圳" || cityName === "广州" ? 1000 : 0); // 对一线城市价格做调整
   const priceVariation = basePrice * 0.25;
@@ -526,7 +550,9 @@ function generateRoomData(id, publisherId, specificCityName, specificDistrictNam
   const title = generatePropertyTitle(rooms, district, selectedTags);
   const community = faker.location.street() + (Math.random() > 0.5 ? "小区" : "公寓"); // 使用 faker.location.street()
   const buildingNo = Math.floor(Math.random() * 30) + 1;
-  const roomNo = `${floorNumber}0${Math.floor(Math.random() * 5) + 1}`;
+  // 为地址生成一个显示用的楼层号，不影响数据库中的 floor 字段
+  const displayFloorNumber = Math.floor(Math.random() * 28) + 1; // 例如 1-28层
+  const roomNo = `${displayFloorNumber}0${Math.floor(Math.random() * 5) + 1}`;
   const address = `${cityName}${district ? district : ''}${faker.location.streetAddress(false)}${community}${buildingNo}栋${roomNo}室`; // 修正地址格式
   const description = generatePropertyDescription(district || cityName, rooms, area, selectedTags);
   const coordinates = generateCoordinates(cityName);
@@ -546,9 +572,9 @@ function generateRoomData(id, publisherId, specificCityName, specificDistrictNam
     district: district, // 直接使用传入的 district
     address,
     rentType,
-    roomType: roomTypeString,
-    floor,
-    orientation: orientations[Math.floor(Math.random() * orientations.length)],
+    roomType: selectedRoomType.name,
+    floor: selectedFloor.name,
+    orientation: selectedOrientation.name,
     images: uniqueImages,
     publisher: publisherId,
     location: {
