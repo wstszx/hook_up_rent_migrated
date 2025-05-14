@@ -15,7 +15,7 @@ class IndexRecommand extends StatefulWidget {
 
 class _IndexRecommandState extends State<IndexRecommand> {
   List<IndexRecommendItem> _recommendations = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _error;
   // bool _isDataFetched = false; // Flag to ensure data is fetched only once - REMOVED
 
