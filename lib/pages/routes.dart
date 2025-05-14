@@ -6,7 +6,8 @@ import 'package:hook_up_rent/pages/home/tab_search/index.dart'; // 搜索页
 import 'package:hook_up_rent/pages/room_add/index.dart'; // 房源发布页
 import 'package:hook_up_rent/pages/map_page.dart'; // 地图页
 import 'package:hook_up_rent/pages/room_detail/index.dart'; // 房源详情页
-
+import 'package:hook_up_rent/pages/room_favorite/index.dart'; // 我的收藏页
+ 
 class Routes {
   // 定义路由名称
   static String home = '/';
@@ -15,7 +16,8 @@ class Routes {
   static String map = '/map'; // Fluro define path
   static String roomAdd = '/room-add'; // Fluro define path
   static String roomDetail = 'room_detail'; // Route name for Navigator.pushNamed and Fluro define path
-
+  static String roomFavorite = 'room_favorite'; // 我的收藏页
+ 
   static void configureRoutes(FluroRouter router) {
     router.define(home, handler: _homeHandler);
     router.define(login, handler: _loginHandler);
@@ -29,8 +31,9 @@ class Routes {
     router.define(map, handler: _mapHandler); // Existing uses /map
     router.define(roomAdd, handler: _roomAddHandler); // Existing uses /room-add
     router.define(roomDetail, handler: _roomDetailHandler, transitionType: TransitionType.native);
+    router.define(roomFavorite, handler: _roomFavoriteHandler, transitionType: TransitionType.native);
   }
-
+ 
   // 定义路由处理函数
   static final Handler _homeHandler = Handler(
       handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
@@ -60,5 +63,10 @@ class Routes {
       handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
     // RoomDetailPage expects arguments via ModalRoute.of(context)?.settings.arguments
     return const RoomDetailPage();
+  });
+ 
+  static final Handler _roomFavoriteHandler = Handler(
+      handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
+    return const RoomFavoritePage();
   });
 }
