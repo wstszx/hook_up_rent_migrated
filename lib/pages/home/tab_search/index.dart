@@ -77,15 +77,8 @@ class _TabSearchState extends State<TabSearch> {
       }
     }
 
-    if (!apiParams.containsKey('rentType')) {
-      if (_currentFilterParams == null ||
-          _currentFilterParams?.rentTypeId == null ||
-          _currentFilterParams!.rentTypeId!.isEmpty) {
-        apiParams['rentType'] = '整租';
-      }
-    }
     
-    // print('[TabSearch] Final apiParams for /api/rooms: $apiParams');
+    print('[TabSearch] Final apiParams for /api/rooms: $apiParams');
 
     try {
       final response = await DioHttp.of(context).get(
@@ -94,6 +87,7 @@ class _TabSearchState extends State<TabSearch> {
       );
 
       if (response.statusCode == 200 && response.data != null) {
+        print('[TabSearch] Received response data: ${response.data}');
         final Map<String, dynamic> responseData = response.data!;
         final List<dynamic> roomsData = responseData['rooms'] as List<dynamic>;
         

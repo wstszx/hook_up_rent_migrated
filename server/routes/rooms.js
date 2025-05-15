@@ -197,6 +197,8 @@ router.get('/', async (req, res) => {
             q // <--- 新增 q 参数用于文本搜索
         } = req.query;
         
+        console.log('[Backend /api/rooms] Received query parameters:', req.query);
+        
         let queryConditions = {};
 
         // 文本搜索 (如果提供了 q 参数)
@@ -212,6 +214,8 @@ router.get('/', async (req, res) => {
                 { tags: searchRegex }
             ];
         }
+
+        console.log('[Backend /api/rooms] Initial queryConditions after text search:', JSON.stringify(queryConditions, null, 2));
 
         // 地理位置查询 (如果提供了经纬度)
         if (longitude !== undefined && latitude !== undefined) {
@@ -234,8 +238,17 @@ router.get('/', async (req, res) => {
 
 
         // 其他筛选条件
-        if (city && city.toLowerCase() !== '不限' && !queryConditions.location) { // 如果有地理位置查询，城市可能不是主要筛选条件
-            queryConditions.city = new RegExp(`^${city}$`, 'i');
+        if (city && city.toLowerCase() !== '不限' && !queryConditions.location) {
+            let cityRegex;
+            // 如果城市名以“市”结尾，尝试匹配去掉“市”字后的名称
+            if (city.endsWith('市') && city.length > 1) {
+                const simplifiedCity = city.substring(0, city.length - 1);
+                // 使用 $in 匹配原始城市名或简化城市名
+                queryConditions.city = { $in: [new RegExp(`^${city}$`, 'i'), new RegExp(`^${simplifiedCity}$`, 'i')] };
+            } else {
+                // 否则，精确匹配城市名
+                queryConditions.city = new RegExp(`^${city}$`, 'i');
+            }
         }
         if (district && district.toLowerCase() !== '不限') {
             queryConditions.district = new RegExp(`^${district}$`, 'i');
@@ -328,6 +341,10 @@ router.get('/', async (req, res) => {
         
         const resultRooms = await query.populate('publisher', 'username _id');
         const totalRooms = await Room.countDocuments(queryConditions);
+
+        console.log(`[Backend /api/rooms] Found ${totalRooms} rooms matching criteria.`);
+        // Optionally log a sample of results:
+        // console.log('[Backend /api/rooms] Sample results:', JSON.stringify(resultRooms.slice(0, 5), null, 2));
 
         res.json({
             rooms: resultRooms,
