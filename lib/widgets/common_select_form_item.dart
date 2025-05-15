@@ -41,7 +41,18 @@ class CommonSelectFormItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  options![value!],
+                  () {
+                    final currentOptions = options;
+                    if (currentOptions != null) {
+                      final currentValue = value;
+                      if (currentValue != null) {
+                        if (currentValue >= 0 && currentValue < currentOptions.length) {
+                          return currentOptions[currentValue];
+                        }
+                      }
+                    }
+                    return '';
+                  }(),
                   style: const TextStyle(fontSize: 16),
                 ),
                 const Icon(Icons.keyboard_arrow_right)
@@ -52,4 +63,16 @@ class CommonSelectFormItem extends StatelessWidget {
       },
     );
   }
+
+String _getDisplayText(List<String>? options, int? value) {
+  if (options == null || value == null) {
+    return ''; // Return empty string if options or value is null
+  }
+  // Now Dart knows options is List<String> and value is int
+  if (value >= 0 && value < options.length) {
+    return options[value]; // Safely access the element
+  } else {
+    return ''; // Return empty string if index is out of bounds
+  }
+}
 }
