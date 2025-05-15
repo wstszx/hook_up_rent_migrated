@@ -32,8 +32,12 @@ class _RoomAddPageState extends State<RoomAddPage> {
   var titleController = TextEditingController();
   var descController = TextEditingController();
   var communityController = TextEditingController(); // 将映射到 address
-  var cityController = TextEditingController();
-  var districtController = TextEditingController();
+  // --- City and District Data ---
+  List<dynamic> _cities = [];
+  List<String> _districts = [];
+  String? _selectedCityId;
+  String? _selectedDistrict;
+
   var priceController = TextEditingController();
   var sizeController = TextEditingController(); // 将作为 tag
 
@@ -47,6 +51,36 @@ class _RoomAddPageState extends State<RoomAddPage> {
   String selectedOrientedId = filter_data.orientedList.first.id;
 
   int decorationType = 0; // 0: 精装, 1: 简装 (将作为 tag)
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCityDistrictData();
+  }
+
+  Future<void> _fetchCityDistrictData() async {
+    try {
+      var res = await DioHttp.of(context).get('/api/configurations/filter-options');
+      if (res.statusCode == 200) {
+        setState(() {
+          _cities = res.data['cities'];
+          // Optionally pre-select the first city and load its districts
+          if (_cities.isNotEmpty) {
+             _selectedCityId = _cities.first['_id'];
+             _districts = List<String>.from(_cities.first['districts']);
+             if (_districts.isNotEmpty) {
+               _selectedDistrict = _districts.first;
+             }
+          }
+        });
+      } else {
+        CommonToast.showToast('获取城市和行政区数据失败');
+      }
+    } catch (e) {
+      print('Error fetching city and district data: $e');
+      CommonToast.showToast('获取城市和行政区数据失败');
+    }
+  }
 
   // --- Image Picker & Room Appliances ---
   List<File> _pickedImages = [];
@@ -64,8 +98,9 @@ class _RoomAddPageState extends State<RoomAddPage> {
     // 1. Validate form data
     final title = titleController.text;
     final description = descController.text;
-    final city = cityController.text;
-    final district = districtController.text;
+    // Use selected city and district from state
+    final city = _cities.firstWhere((c) => c['_id'] == _selectedCityId, orElse: () => null)?['name'] ?? '';
+    final district = _selectedDistrict ?? '';
     final address = communityController.text; // 小区名作为地址
     final price = priceController.text;
     final size = sizeController.text;
@@ -194,17 +229,37 @@ class _RoomAddPageState extends State<RoomAddPage> {
         padding: const EdgeInsets.only(bottom: 80), // Ensure space for FAB
         children: [
           const CommonTitle('房源信息'),
-          CommonFormItem(
+          // City Selection
+          CommonSelectFormItem(
             label: '城市',
-            hintText: '请输入城市，如：北京',
-            controller: cityController,
+            value: _cities.indexWhere((item) => item['_id'] == _selectedCityId),
+            onChange: (val) {
+              if (val != null && val < _cities.length) {
+                setState(() {
+                  _selectedCityId = _cities[val]['_id'];
+                  _districts = List<String>.from(_cities[val]['districts']);
+                  // Reset selected district when city changes and update to first district if available
+                  _selectedDistrict = _districts.isNotEmpty ? _districts.first : null;
+                });
+              }
+            },
+            options: _cities.map((item) => item['name'].toString()).toList(),
           ),
-          CommonFormItem(
-            label: '行政区',
-            hintText: '请输入行政区，如：海淀区 (可选)',
-            controller: districtController,
-          ),
-          CommonFormItem(
+          // District Selection
+          if (_districts.isNotEmpty) // Keep this check
+            CommonSelectFormItem(
+              label: '行政区',
+              value: _districts.isNotEmpty ? (_selectedDistrict != null && _districts.contains(_selectedDistrict) ? _districts.indexOf(_selectedDistrict!) : 0) : -1, // Ensure value is not -1 if districts is empty
+              onChange: (val) {
+                if (val != null && val < _districts.length) {
+                  setState(() {
+                    _selectedDistrict = _districts[val];
+                  });
+                }
+              },
+              options: _districts,
+            ),
+            CommonFormItem(
             label: '小区/地址',
             hintText: '请输入小区名称或详细地址',
             controller: communityController,
