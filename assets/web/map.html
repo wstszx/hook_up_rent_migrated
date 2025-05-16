@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>高德地图</title>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <style>
+        html, body, #container {
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.15&key=16b0a00878501bd8dbfd1d67bc6452f1"></script>
+    <script type="text/javascript">
+        var map = null;
+        var markers = [];
+
+        function initMap() {
+            map = new AMap.Map('container', {
+                resizeEnable: true,
+                zoom: 11,
+                center: [116.397428, 39.909188] // Default center (Beijing)
+            });
+
+            map.on('moveend', function() {
+                var center = map.getCenter();
+                // Notify Flutter about the new center
+                if (window.flutter_inappwebview) {
+                    window.flutter_inappwebview.callHandler('mapMoveEnd', {
+                        longitude: center.getLng(),
+                        latitude: center.getLat()
+                    });
+                } else if (window.flutter_webview) {
+                     window.flutter_webview.postMessage(JSON.stringify({
+                        type: 'mapMoveEnd',
+                        data: {
+                            longitude: center.getLng(),
+                            latitude: center.getLat()
+                        }
+                    }));
+                } else if (window.flutter) {
+                     window.flutter.postMessage(JSON.stringify({
+                        type: 'mapMoveEnd',
+                        data: {
+                            longitude: center.getLng(),
+                            latitude: center.getLat()
+                        }
+                    }));
+                }
+            });
+        }
+
+        function setCenter(lng, lat) {
+            if (map) {
+                map.setCenter([lng, lat]);
+            }
+        }
+
+        function getCurrentCenter() {
+            if (map) {
+                var center = map.getCenter();
+                return JSON.stringify({
+                    longitude: center.getLng(),
+                    latitude: center.getLat()
+                });
+            }
+            return null;
+        }
+
+        function clearMarkers() {
+            if (map) {
+                map.remove(markers);
+                markers = [];
+            }
+        }
+
+        function updateMarkers(houses) {
+            clearMarkers();
+            if (map && houses && houses.length > 0) {
+                houses.forEach(function(house) {
+                    var marker = new AMap.Marker({
+                        position: new AMap.LngLat(house.longitude, house.latitude),
+                        title: house.title,
+                        extData: house.id // Store house ID in extData
+                    });
+
+                    marker.on('click', function() {
+                        // Notify Flutter about marker click
+                         if (window.flutter_inappwebview) {
+                            window.flutter_inappwebview.callHandler('markerClick', {
+                                houseId: this.getExtData()
+                            });
+                        } else if (window.flutter_webview) {
+                            window.flutter_webview.postMessage(JSON.stringify({
+                                type: 'markerClick',
+                                data: {
+                                    houseId: this.getExtData()
+                                }
+                            }));
+                        } else if (window.flutter) {
+                            window.flutter.postMessage(JSON.stringify({
+                                type: 'markerClick',
+                                data: {
+                                    houseId: this.getExtData()
+                                }
+                            }));
+                        }
+                    });
+
+                    markers.push(marker);
+                });
+                map.add(markers);
+            }
+        }
+
+        // Initialize the map when the page loads
+        window.onload = initMap;
+
+    </script>
+</body>
+</html>

@@ -42,6 +42,8 @@ dependencies:
   geocoding: ^3.0.0 # 反向地理编码插件
   http_parser: ^4.1.2
   mime: ^2.0.0
+  webview_flutter: ^4.7.0 # 集成webview
+  permission_handler: ^11.3.1 # 权限处理
 
 dev_dependencies:
   flutter_test:
@@ -88,3 +90,4 @@ flutter:
     - static/images/home_profile_house.png
     - static/images/home_profile_wallet.png
     - static/images/loading.jpg
+    - assets/web/

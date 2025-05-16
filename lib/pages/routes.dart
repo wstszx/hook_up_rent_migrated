@@ -4,7 +4,7 @@ import 'package:fluro/fluro.dart';
 import 'package:hook_up_rent/pages/login.dart';
 import 'package:hook_up_rent/pages/home/tab_search/index.dart'; // 搜索页
 import 'package:hook_up_rent/pages/room_add/index.dart'; // 房源发布页
-import 'package:hook_up_rent/pages/map_page.dart'; // 地图页
+import 'package:hook_up_rent/pages/map_house_page.dart'; // 地图页
 import 'package:hook_up_rent/pages/room_detail/index.dart'; // 房源详情页
 import 'package:hook_up_rent/pages/room_favorite/index.dart'; // 我的收藏页
 import 'package:hook_up_rent/pages/my_orders/index.dart'; // 我的订单页
@@ -67,7 +67,7 @@ class Routes {
 
   static final Handler _mapHandler = Handler(
       handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
-    return const MapPage();
+    return const MapHousePage();
   });
 
   static final Handler _roomAddHandler = Handler(
