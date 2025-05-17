@@ -173,5 +173,32 @@ router.get('/orders', authMiddleware, async (req, res) => {
 //     res.json(receivedOrders);
 // });
 
+// --- 我的房源管理 ---
+
+// GET /api/me/rooms - 获取当前用户发布的房源列表 (需要认证)
+router.get('/rooms', authMiddleware, async (req, res) => {
+    try {
+        const publisherId = req.user.userId;
+        const { status } = req.query; // 可选参数，用于筛选房源状态
+        
+        // 构建查询条件
+        const queryConditions = { publisher: publisherId };
+        
+        // 如果提供了状态参数，添加到查询条件
+        if (status && ['available', 'rented', 'pending', 'unavailable'].includes(status)) {
+            queryConditions.status = status;
+        }
+        
+        // 查询用户发布的房源
+        const rooms = await Room.find(queryConditions)
+            .sort({ createdAt: -1 }); // 按创建时间降序排列
+        
+        res.json(rooms);
+        
+    } catch (error) {
+        console.error('Error fetching user rooms:', error);
+        res.status(500).json({ message: '服务器内部错误，获取房源列表失败' });
+    }
+});
 
 module.exports = router;
