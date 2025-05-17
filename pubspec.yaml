@@ -91,3 +91,4 @@ flutter:
     - static/images/home_profile_wallet.png
     - static/images/loading.jpg
     - assets/web/
+    - region.json

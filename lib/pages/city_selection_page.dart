@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/general_type.dart';
-import './utils/dio_http.dart'; // Assuming dio_http.dart is in lib/pages/utils/
-import '../scoped_model/city.dart'; // For CityModel if needed for other purposes, or remove
-import '../pages/utils/scoped_model_helper.dart'; // For ScopedModelHelper if needed
+import '../services/region_service.dart';
+import '../scoped_model/city.dart';
+import '../pages/utils/scoped_model_helper.dart';
+import '../pages/home/tab_search/filter_bar/data.dart' as file_data;
 
 class CitySelectionPage extends StatefulWidget {
   const CitySelectionPage({super.key});
@@ -12,30 +12,25 @@ class CitySelectionPage extends StatefulWidget {
 }
 
 class _CitySelectionPageState extends State<CitySelectionPage> {
-  late Future<List<GeneralType>> _citiesFuture;
-  List<GeneralType> _allCities = [];
-  List<GeneralType> _filteredCities = [];
+  late Future<List<file_data.GeneralType>> _citiesFuture;
+  List<file_data.GeneralType> _allCities = [];
+  List<file_data.GeneralType> _filteredCities = [];
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // It's generally better to initialize context-dependent futures
-    // in didChangeDependencies or pass context if absolutely needed by of(context) at initState.
-    // However, if DioHttp.of(context) can be called here safely or is refactored
-    // to not strictly need context for this call, this is fine.
-    // For simplicity, assuming it's okay for now.
-    // A common pattern is to pass the DioHttp instance or make getCities static if context isn't needed for the call itself.
     _citiesFuture = _fetchCities();
     _searchController.addListener(_filterCities);
   }
 
-  Future<List<GeneralType>> _fetchCities() async {
-    // Ensure context is available if DioHttp.of(context) truly needs it here.
-    // If DioHttp instance is managed elsewhere (e.g., via Provider or a singleton),
-    // it would be cleaner.
-    // For now, we'll call it directly, assuming it works or will be refactored.
-    List<GeneralType> cities = await DioHttp.of(context).getCities();
+  Future<List<file_data.GeneralType>> _fetchCities() async {
+    // 加载region.json数据
+    await RegionService.loadRegionData();
+    
+    // 获取城市列表
+    List<file_data.GeneralType> cities = RegionService.getCityList();
+    
     setState(() {
       _allCities = cities;
       _filteredCities = cities;
@@ -87,7 +82,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<GeneralType>>(
+            child: FutureBuilder<List<file_data.GeneralType>>(
               future: _citiesFuture, // Use the future initialized in initState
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting && _allCities.isEmpty) {
@@ -125,7 +120,7 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
                 return ListView.builder(
                   itemCount: _filteredCities.length,
                   itemBuilder: (context, index) {
-                    GeneralType city = _filteredCities[index];
+                    file_data.GeneralType city = _filteredCities[index];
                     return ListTile(
                       title: Text(city.name),
                       onTap: () {

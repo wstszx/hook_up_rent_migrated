@@ -9,6 +9,7 @@ import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
 import 'package:hook_up_rent/scoped_model/city.dart'; // 导入 CityModel
 import 'package:hook_up_rent/scoped_model/room_filter.dart';
 import 'package:hook_up_rent/pages/utils/dio_http.dart'; // <--- 引入 DioHttp
+import 'package:hook_up_rent/services/region_service.dart'; // 引入 RegionService
 
 class FilterBar extends StatefulWidget {
   final ValueChanged<file_data.FilterBarResult>? onChange;
@@ -130,23 +131,9 @@ class _FilterBarState extends State<FilterBar> {
     String? currentCityNameFromModel = cityModel.city?.name;
 
     if (currentCityNameFromModel != null && currentCityNameFromModel != '定位中...') {
-      String normalizedCurrentCity = _normalizeCityName(currentCityNameFromModel);
-      try {
-        var cityInfo = file_data.cityAreaListData.firstWhere(
-          (cityData) => _normalizeCityName(cityData.cityName) == normalizedCurrentCity,
-        );
-        if (cityInfo.districts.isNotEmpty) {
-          _dynamicAreaOptionsForPicker = List<file_data.GeneralType>.from(cityInfo.districts);
-          filterModel.dataList = {...filterModel.dataList, 'districtList': _dynamicAreaOptionsForPicker};
-        } else {
-          _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', '${normalizedCurrentCity}_area_any')];
-          filterModel.dataList = {...filterModel.dataList, 'districtList': _dynamicAreaOptionsForPicker};
-        }
-      } catch (e) {
-        print('City not found in cityAreaListData: $currentCityNameFromModel (normalized: $normalizedCurrentCity). Error: $e');
-        _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', 'area_any')];
-        filterModel.dataList = {...filterModel.dataList, 'districtList': _dynamicAreaOptionsForPicker};
-      }
+      // 使用RegionService获取区域数据
+      _dynamicAreaOptionsForPicker = RegionService.getDistrictsByCityName(currentCityNameFromModel);
+      filterModel.dataList = {...filterModel.dataList, 'districtList': _dynamicAreaOptionsForPicker};
     } else {
       _dynamicAreaOptionsForPicker = [file_data.GeneralType('不限', 'area_any')];
       filterModel.dataList = {...filterModel.dataList, 'districtList': _dynamicAreaOptionsForPicker};
@@ -343,6 +330,9 @@ class _FilterBarState extends State<FilterBar> {
   @override
   void initState() {
     super.initState();
+    
+    // 确保region.json数据已加载
+    RegionService.loadRegionData();
     
     // 初始化本地列表（作为备用）
     _priceListLocal = file_data.priceList;

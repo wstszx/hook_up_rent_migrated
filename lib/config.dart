@@ -1,4 +1,4 @@
-import 'models/general_type.dart';
+import 'pages/home/tab_search/filter_bar/data.dart' as file_data;
 
 class Config {
   static const CommonIcon = 'CommonIcon';
@@ -7,10 +7,10 @@ class Config {
   static const DefaultImage = 'https://via.placeholder.com/150/CCCCCC/FFFFFF?Text=No+Image';
 
 
-  static List<GeneralType> availableCitys = [
-    GeneralType('北京', 'AREA|88cff55c-aaa4-e2e0'),
-    GeneralType('上海', 'AREA|dbf46d32-7e76-1196'),
-    GeneralType('广州', 'AREA|88cff55c-aaa4-e2e0'),
-    GeneralType('深圳', 'AREA|88cff55c-aaa4-e2e0'),
+  static List<file_data.GeneralType> availableCitys = [
+    file_data.GeneralType('北京市', '北京市'),
+    file_data.GeneralType('上海市', '上海市'),
+    file_data.GeneralType('广州市', '广州市'),
+    file_data.GeneralType('深圳市', '深圳市'),
   ];
 }

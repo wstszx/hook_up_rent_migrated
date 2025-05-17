@@ -1,15 +1,15 @@
 import 'package:scoped_model/scoped_model.dart';
-import '../models/general_type.dart';
+import '../pages/home/tab_search/filter_bar/data.dart' as file_data;
 
 class CityModel extends Model {
-  GeneralType? _city; // 改为可空类型
+  file_data.GeneralType? _city; // 改为可空类型
 
-  set city(GeneralType? data) { // setter 的参数也改为可空
+  set city(file_data.GeneralType? data) { // setter 的参数也改为可空
     _city = data;
     notifyListeners();
   }
 
-  GeneralType? get city { // getter 返回类型改为可空
+  file_data.GeneralType? get city { // getter 返回类型改为可空
     return _city;
   }
 

@@ -8,7 +8,7 @@ import '../../pages/city_selection_page.dart'; // Import for the new city select
 import 'package:geocoding/geocoding.dart';
 import 'package:scoped_model/scoped_model.dart';
 import '../../config.dart';
-import '../../models/general_type.dart';
+import '../../pages/home/tab_search/filter_bar/data.dart' as file_data;
 import '../../pages/utils/common_toast.dart';
 import '../../pages/utils/scoped_model_helper.dart';
 import '../../pages/utils/store.dart';
@@ -52,11 +52,11 @@ class _SearchBarState extends State<SearchBar> {
     });
   }
 
-  _saveCity(GeneralType city) async {
+  _saveCity(file_data.GeneralType city) async {
     // 保存城市到本地存储
     ScopedModelHelper.getModel<CityModel>(context).city = city;
     var store = await Store.getInstance();
-    var cityString = json.encode(city.toJson());
+    var cityString = json.encode({'name': city.name, 'id': city.id});
     store.setString(StoreKeys.city, cityString);
     if (mounted) {
       CommonToast.showToast('城市已切换为${city.name}');
@@ -191,7 +191,7 @@ class _SearchBarState extends State<SearchBar> {
           cityIdForSave = processedCityName; // ID 使用处理后的城市名
 
           print('_determinePositionAndSetCity: 最终用于保存的城市名: $processedCityName, ID: $cityIdForSave');
-          _saveCity(GeneralType(processedCityName, cityIdForSave));
+          _saveCity(file_data.GeneralType(processedCityName, cityIdForSave));
         } else {
           CommonToast.showToast('无法获取有效城市名称，已切换到默认城市。');
           print('_determinePositionAndSetCity: 无法获取有效城市名称 (finalCityNameForSave is null)，使用默认城市');
@@ -222,7 +222,7 @@ class _SearchBarState extends State<SearchBar> {
   // 选择城市
   _changeLocation() async {
     // Navigate to the new CitySelectionPage
-    final selectedCity = await Navigator.push<GeneralType>(
+    final selectedCity = await Navigator.push<file_data.GeneralType>(
       context,
       MaterialPageRoute(builder: (context) => const CitySelectionPage()),
     );
@@ -244,12 +244,14 @@ class _SearchBarState extends State<SearchBar> {
     CityModel cityModel = ScopedModelHelper.getModel<CityModel>(context);
     if (cityString != null) {
       print("从本地存储加载城市: $cityString");
-      var city = GeneralType.fromJson(json.decode(cityString));
+      var jsonData = json.decode(cityString);
+      var city = file_data.GeneralType(jsonData['name'], jsonData['id']);
       cityModel.city = city; // 这会触发 CityModel 中的 notifyListeners
     } else {
       print("本地存储中未找到城市，设置默认城市。");
       if (Config.availableCitys.isNotEmpty) {
-        cityModel.city = Config.availableCitys.first; // 设置默认城市
+        // 创建一个默认城市
+        cityModel.city = file_data.GeneralType('北京市', '北京市'); // 设置默认城市
       } else {
         print("警告: Config.availableCitys 为空，无法设置默认城市。");
         // 在这种情况下，cityModel.city 将保持 null，UI会显示 "定位中..."
