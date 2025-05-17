@@ -19,6 +19,7 @@ import 'package:hook_up_rent/widgets/common_image_picker.dart';
 import 'package:hook_up_rent/widgets/common_radio_form_item.dart';
 import 'package:hook_up_rent/widgets/common_select_form_item.dart';
 import 'package:hook_up_rent/widgets/common_title.dart';
+import 'package:hook_up_rent/services/region_service.dart'; // 引入 RegionService
 
 class RoomAddPage extends StatefulWidget {
   const RoomAddPage({Key? key}) : super(key: key);
@@ -33,9 +34,9 @@ class _RoomAddPageState extends State<RoomAddPage> {
   var descController = TextEditingController();
   var communityController = TextEditingController(); // 将映射到 address
   // --- City and District Data ---
-  List<dynamic> _cities = [];
-  List<String> _districts = [];
-  String? _selectedCityId;
+  List<filter_data.GeneralType> _cities = [];
+  List<filter_data.GeneralType> _districts = [filter_data.GeneralType('不限', 'area_any')];
+  String? _selectedCityName;
   String? _selectedDistrict;
 
   var priceController = TextEditingController();
@@ -55,29 +56,30 @@ class _RoomAddPageState extends State<RoomAddPage> {
   @override
   void initState() {
     super.initState();
-    _fetchCityDistrictData();
+    _loadCityDistrictData();
   }
 
-  Future<void> _fetchCityDistrictData() async {
+  Future<void> _loadCityDistrictData() async {
     try {
-      var res = await DioHttp.of(context).get('/api/configurations/filter-options');
-      if (res.statusCode == 200) {
-        setState(() {
-          _cities = res.data['cities'];
-          // Optionally pre-select the first city and load its districts
-          if (_cities.isNotEmpty) {
-             _selectedCityId = _cities.first['_id'];
-             _districts = List<String>.from(_cities.first['districts']);
-             if (_districts.isNotEmpty) {
-               _selectedDistrict = _districts.first;
-             }
+      // 确保 RegionService 已加载数据
+      await RegionService.loadRegionData();
+      
+      setState(() {
+        _cities = RegionService.getCityList();
+        
+        // 预选第一个城市
+        if (_cities.isNotEmpty) {
+          _selectedCityName = _cities.first.name;
+          _districts = RegionService.getDistrictsByCityName(_selectedCityName!);
+          
+          // 预选第一个区域
+          if (_districts.isNotEmpty) {
+            _selectedDistrict = _districts.first.name;
           }
-        });
-      } else {
-        CommonToast.showToast('获取城市和行政区数据失败');
-      }
+        }
+      });
     } catch (e) {
-      print('Error fetching city and district data: $e');
+      print('Error loading city and district data: $e');
       CommonToast.showToast('获取城市和行政区数据失败');
     }
   }
@@ -98,8 +100,8 @@ class _RoomAddPageState extends State<RoomAddPage> {
     // 1. Validate form data
     final title = titleController.text;
     final description = descController.text;
-    // Use selected city and district from state
-    final city = _cities.firstWhere((c) => c['_id'] == _selectedCityId, orElse: () => null)?['name'] ?? '';
+    // 使用选择的城市和区域名称
+    final city = _selectedCityName ?? '';
     final district = _selectedDistrict ?? '';
     final address = communityController.text; // 小区名作为地址
     final price = priceController.text;
@@ -229,35 +231,35 @@ class _RoomAddPageState extends State<RoomAddPage> {
         padding: const EdgeInsets.only(bottom: 80), // Ensure space for FAB
         children: [
           const CommonTitle('房源信息'),
-          // City Selection
+          // 城市选择
           CommonSelectFormItem(
             label: '城市',
-            value: _cities.indexWhere((item) => item['_id'] == _selectedCityId),
+            value: _cities.indexWhere((item) => item.name == _selectedCityName),
             onChange: (val) {
               if (val != null && val < _cities.length) {
                 setState(() {
-                  _selectedCityId = _cities[val]['_id'];
-                  _districts = List<String>.from(_cities[val]['districts']);
-                  // Reset selected district when city changes and update to first district if available
-                  _selectedDistrict = _districts.isNotEmpty ? _districts.first : null;
+                  _selectedCityName = _cities[val].name;
+                  _districts = RegionService.getDistrictsByCityName(_selectedCityName!);
+                  // 重置选中的区域
+                  _selectedDistrict = _districts.isNotEmpty ? _districts.first.name : null;
                 });
               }
             },
-            options: _cities.map((item) => item['name'].toString()).toList(),
+            options: _cities.map((item) => item.name).toList(),
           ),
-          // District Selection
+          // 区域选择
           if (_districts.isNotEmpty) // Keep this check
             CommonSelectFormItem(
               label: '行政区',
-              value: _districts.isNotEmpty ? (_selectedDistrict != null && _districts.contains(_selectedDistrict) ? _districts.indexOf(_selectedDistrict!) : 0) : -1, // Ensure value is not -1 if districts is empty
+              value: _districts.indexWhere((item) => item.name == _selectedDistrict),
               onChange: (val) {
                 if (val != null && val < _districts.length) {
                   setState(() {
-                    _selectedDistrict = _districts[val];
+                    _selectedDistrict = _districts[val].name;
                   });
                 }
               },
-              options: _districts,
+              options: _districts.map((item) => item.name).toList(),
             ),
             CommonFormItem(
             label: '小区/地址',
