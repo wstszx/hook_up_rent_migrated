@@ -13,6 +13,7 @@ import 'package:hook_up_rent/pages/setting.dart'; // 设置页
 import 'package:hook_up_rent/pages/home/info/news_detail_page.dart'; // 资讯详情页
 import 'package:hook_up_rent/pages/home/info/info_data.dart'; // 导入 InfoItem 类型
 import 'package:hook_up_rent/pages/register.dart'; // 注册页
+import 'package:hook_up_rent/pages/room_manage/index.dart'; // 房屋管理页
 
 class Routes {
   // 定义路由名称
@@ -28,6 +29,7 @@ class Routes {
   static String setting = 'setting'; // 设置页
   static String newsDetail = 'news_detail'; // 资讯详情页
   static String register = 'register'; // 注册页
+  static String roomManage = 'room_manage'; // 房屋管理页
  
   static void configureRoutes(FluroRouter router) {
     router.define(home, handler: _homeHandler);
@@ -48,6 +50,7 @@ class Routes {
     router.define(setting, handler: _settingHandler, transitionType: TransitionType.native);
     router.define(newsDetail, handler: _newsDetailHandler, transitionType: TransitionType.native);
     router.define(register, handler: _registerHandler, transitionType: TransitionType.native);
+    router.define(roomManage, handler: _roomManageHandler, transitionType: TransitionType.native);
   }
  
   // 定义路由处理函数
@@ -113,5 +116,10 @@ class Routes {
   static final Handler _registerHandler = Handler(
       handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
     return const RegisterPage();
+  });
+  
+  static final Handler _roomManageHandler = Handler(
+      handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
+    return const RoomManagePage();
   });
 }

@@ -4,6 +4,7 @@ class Config {
   static const CommonIcon = 'CommonIcon';
   static const BaseUrl =
       'http://192.168.1.3:3000/'; // <-- 请将 YOUR_COMPUTER_IP 替换为您的实际IP地址
+  static String get apiBaseUrl => BaseUrl.endsWith('/') ? BaseUrl.substring(0, BaseUrl.length - 1) : BaseUrl;
   static const DefaultImage = 'https://via.placeholder.com/150/CCCCCC/FFFFFF?Text=No+Image';
 
 
