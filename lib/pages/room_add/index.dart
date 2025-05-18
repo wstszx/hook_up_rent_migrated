@@ -107,10 +107,24 @@ class _RoomAddPageState extends State<RoomAddPage> {
     final price = priceController.text;
     final size = sizeController.text;
 
-    if (title.isEmpty || city.isEmpty || address.isEmpty || price.isEmpty) {
-      CommonToast.showToast('标题、城市、小区和租金不能为空');
+    // 创建一个列表来收集所有缺失的字段
+    List<String> missingFields = [];
+    
+    // 检查所有必填字段
+    if (title.isEmpty) missingFields.add('标题');
+    if (city.isEmpty) missingFields.add('城市');
+    if (district.isEmpty) missingFields.add('行政区');
+    if (address.isEmpty) missingFields.add('小区/地址');
+    if (price.isEmpty) missingFields.add('租金');
+    if (_pickedImages.isEmpty) missingFields.add('房屋图像');
+    
+    // 如果有缺失字段，显示具体的错误信息
+    if (missingFields.isNotEmpty) {
+      CommonToast.showToast('请填写以下必填项: ${missingFields.join('、')}');
       return;
     }
+    
+    // 验证租金格式
     double? parsedPrice;
     try {
       parsedPrice = double.parse(price);
