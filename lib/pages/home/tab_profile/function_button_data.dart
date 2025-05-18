@@ -13,7 +13,7 @@ class FunctionButtonItem {
 final List<FunctionButtonItem> list = [
   FunctionButtonItem('static/images/home_profile_record.png', "看房记录",
       (context) => Navigator.pushNamed(context, 'test')),
-  FunctionButtonItem('static/images/home_profile_order.png', '我的订单', (context) {
+  FunctionButtonItem('static/images/home_profile_order.png', '我的预约', (context) {
     bool isLogin = ScopedModelHelper.getModel<AuthModel>(context).isLogin;
     if (isLogin) {
       Navigator.of(context).pushNamed('my_orders'); // Navigate to my_orders route

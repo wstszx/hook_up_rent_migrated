@@ -7,7 +7,7 @@ import 'package:hook_up_rent/pages/room_add/index.dart'; // 房源发布页
 import 'package:hook_up_rent/pages/map_house_page.dart'; // 地图页
 import 'package:hook_up_rent/pages/room_detail/index.dart'; // 房源详情页
 import 'package:hook_up_rent/pages/room_favorite/index.dart'; // 我的收藏页
-import 'package:hook_up_rent/pages/my_orders/index.dart'; // 我的订单页
+import 'package:hook_up_rent/pages/my_orders/index.dart'; // 我的预约页
 import 'package:hook_up_rent/pages/profile_edit.dart'; // 个人资料编辑页
 import 'package:hook_up_rent/pages/setting.dart'; // 设置页
 import 'package:hook_up_rent/pages/home/info/news_detail_page.dart'; // 资讯详情页
@@ -24,7 +24,7 @@ class Routes {
   static String roomAdd = '/room-add'; // Fluro define path
   static String roomDetail = 'room_detail'; // Route name for Navigator.pushNamed and Fluro define path
   static String roomFavorite = 'room_favorite'; // 我的收藏页
-  static String myOrders = 'my_orders'; // 我的订单页
+  static String myOrders = 'my_orders'; // 我的预约页
   static String profileEdit = 'profile_edit'; // 个人资料编辑页
   static String setting = 'setting'; // 设置页
   static String newsDetail = 'news_detail'; // 资讯详情页

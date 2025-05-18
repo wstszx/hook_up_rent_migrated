@@ -9,7 +9,7 @@ import 'package:hook_up_rent/pages/utils/store.dart'; // 用于获取用户token
 import 'package:hook_up_rent/scoped_model/auth.dart'; // 用于获取用户信息
 import 'package:scoped_model/scoped_model.dart';
 
-// 订单数据模型 (根据后端API调整)
+// 预约数据模型 (根据后端API调整)
 class OrderItemData {
   final String id;
   final RoomListItemData room; // 直接复用房源列表项数据模型
@@ -149,7 +149,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           });
         } else {
           print('[MyOrdersPage] Failed to get orders or data format is incorrect. Response data: ${response.data}');
-          CommonToast.showToast('获取订单失败或数据格式不正确');
+          CommonToast.showToast('获取预约失败或数据格式不正确');
           setState(() {
             _isLoading = false;
             print('[MyOrdersPage] isLoading set to false due to incorrect data format.');
@@ -157,7 +157,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
         }
       } catch (e) {
         print('[MyOrdersPage] Error fetching orders: $e');
-        CommonToast.showToast('获取订单列表失败: $e');
+        CommonToast.showToast('获取预约列表失败: $e');
         setState(() {
           _isLoading = false;
           print('[MyOrdersPage] isLoading set to false due to an error.');
@@ -214,18 +214,18 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('我的订单'),
+        title: const Text('我的预约'),
         elevation: 0,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _orders.isEmpty
-              ? const Center(child: Text('您还没有订单'))
+              ? const Center(child: Text('您还没有预约'))
               : ListView.builder(
                   itemCount: _orders.length,
                   itemBuilder: (context, index) {
                     final order = _orders[index];
-                    // 使用 RoomListItemWidget 来展示房源信息，并在其下方添加订单特定信息
+                    // 使用 RoomListItemWidget 来展示房源信息，并在其下方添加预约特定信息
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                       child: Padding(
@@ -246,7 +246,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                             if (order.appointmentTime != null)
                               Text('预约时间: ${order.appointmentTime!.toLocal().toString().substring(0, 16)}'),
                             Text('下单时间: ${order.createdAt.toLocal().toString().substring(0, 16)}'),
-                            // TODO: 可以添加取消订单等操作按钮
+                            // TODO: 可以添加取消预约等操作按钮
                           ],
                         ),
                       ),

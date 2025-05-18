@@ -86,7 +86,7 @@ router.delete('/favorites/:roomId', authMiddleware, async (req, res) => {
     }
 });
 
-// --- 我的订单 (预约看房) ---
+// --- 我的预约 (预约看房) ---
 
 // POST /api/me/orders - 添加房源到预约列表 (需要认证)
 router.post('/orders', authMiddleware, async (req, res) => {
@@ -108,7 +108,7 @@ router.post('/orders', authMiddleware, async (req, res) => {
         }
 
 
-        // 可选：检查用户是否对该房源已有待处理的订单
+        // 可选：检查用户是否对该房源已有待处理的预约
         // const existingPendingOrder = await Order.findOne({ user: userId, room: roomId, status: 'pending' });
         // if (existingPendingOrder) {
         //     return res.status(400).json({ message: '您已对该房源有待处理的预约' });
@@ -129,7 +129,7 @@ router.post('/orders', authMiddleware, async (req, res) => {
             .populate('publisher', 'username');
 
 
-        res.status(201).json({ message: '预约看房成功，已添加到我的订单', order: populatedOrder });
+        res.status(201).json({ message: '预约看房成功，已添加到我的预约', order: populatedOrder });
 
     } catch (error) {
         console.error('Error creating order:', error);
@@ -137,7 +137,7 @@ router.post('/orders', authMiddleware, async (req, res) => {
             const messages = Object.values(error.errors).map(val => val.message);
             return res.status(400).json({ message: messages.join(', ') });
         }
-        res.status(500).json({ message: '服务器内部错误，创建订单失败' });
+        res.status(500).json({ message: '服务器内部错误，创建预约失败' });
     }
 });
 
@@ -145,7 +145,7 @@ router.post('/orders', authMiddleware, async (req, res) => {
 router.get('/orders', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId;
-        // 查找用户作为租客的订单
+        // 查找用户作为租客的预约
         const orders = await Order.find({ user: userId })
             .populate('room', 'title price city district address images rentType roomType status') // 房源信息
             .populate('publisher', 'username') // 房东信息
@@ -155,15 +155,15 @@ router.get('/orders', authMiddleware, async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching orders:', error);
-        res.status(500).json({ message: '服务器内部错误，获取订单列表失败' });
+        res.status(500).json({ message: '服务器内部错误，获取预约列表失败' });
     }
 });
 
-// TODO: PUT /api/me/orders/:orderId - 更新订单状态 (例如用户取消订单)
+// TODO: PUT /api/me/orders/:orderId - 更新预约状态 (例如用户取消预约)
 // router.put('/orders/:orderId', authMiddleware, async (req, res) => { ... });
 
-// 房东可能也需要查看/管理他收到的订单
-// TODO: GET /api/me/received-orders (获取作为房东收到的订单)
+// 房东可能也需要查看/管理他收到的预约
+// TODO: GET /api/me/received-orders (获取作为房东收到的预约)
 // router.get('/received-orders', authMiddleware, async (req, res) => {
 //     const publisherId = req.user.userId;
 //     const receivedOrders = await Order.find({ publisher: publisherId })

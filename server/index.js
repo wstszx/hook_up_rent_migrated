@@ -19,7 +19,7 @@ const OrientationOption = require('./models/OrientationOption');
 const FloorOption = require('./models/FloorOption');
 const PriceRangeOption = require('./models/PriceRangeOption');
 // const Favorite = require('./models/Favorite'); // 可选，如果要在seed中创建收藏
-// const Order = require('./models/Order');    // 可选，如果要在seed中创建订单
+// const Order = require('./models/Order');    // 可选，如果要在seed中创建预约
 
 
 // 引入认证路由
@@ -143,7 +143,7 @@ const seedDatabase = async () => {
             console.log('Seeding profile buttons...');
             await ProfileButton.create([
               { imageUrl: 'static/images/home_profile_record.png', title: "看房记录", actionType: 'NAVIGATE', actionValue: 'test', order: 1 },
-              { imageUrl: 'static/images/home_profile_order.png', title: '我的订单', actionType: 'NAVIGATE', actionValue: 'orders_page', order: 2 },
+              { imageUrl: 'static/images/home_profile_order.png', title: '我的预约', actionType: 'NAVIGATE', actionValue: 'orders_page', order: 2 },
               { imageUrl: 'static/images/home_profile_favor.png', title: '我的收藏', actionType: 'NAVIGATE', actionValue: 'favorites_page', order: 3 },
               { imageUrl: 'static/images/home_profile_id.png', title: '身份认证', actionType: 'NAVIGATE', actionValue: 'auth_status_page', order: 4 },
               { imageUrl: 'static/images/home_profile_message.png', title: '联系我们', actionType: 'SHOW_CONTACT_INFO', order: 5 },
@@ -241,7 +241,7 @@ const seedDatabase = async () => {
             ]);
         }
         
-        // 可选：创建收藏和订单
+        // 可选：创建收藏和预约
         // const room1 = await Room.findOne({ title: '市中心舒适一居室' });
         // const room2 = await Room.findOne({ title: '安静小区两室套房' });
         // if (room1 && room2) {

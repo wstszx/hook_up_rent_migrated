@@ -190,8 +190,8 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       );
  
       if (response.statusCode == 201) {
-        CommonToast.showToast('预约成功，已添加到我的订单');
-        // 可选：跳转到我的订单页面
+        CommonToast.showToast('预约成功，已添加到我的预约');
+        // 可选：跳转到我的预约页面
         // Navigator.of(context).pushNamed(Routes.myOrders);
       } else {
         CommonToast.showToast('预约失败: ${response.data?['message'] ?? '请稍后再试'}');
