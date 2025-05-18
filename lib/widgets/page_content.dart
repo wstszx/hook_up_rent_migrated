@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/routes.dart';
+import 'package:rent_share/pages/routes.dart';
 
 class PageContent extends StatelessWidget {
   final String name;
@@ -16,3 +16,4 @@ class PageContent extends StatelessWidget {
     );
   }
 }
+

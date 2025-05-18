@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/info/index.dart';
-import 'package:hook_up_rent/pages/home/tab_index/index_navigator.dart';
-import 'package:hook_up_rent/pages/home/tab_index/index_recommand.dart';
-import 'package:hook_up_rent/widgets/common_swiper.dart';
-import 'package:hook_up_rent/widgets/search_bar/index.dart' as custom;
+import 'package:rent_share/pages/home/info/index.dart';
+import 'package:rent_share/pages/home/tab_index/index_navigator.dart';
+import 'package:rent_share/pages/home/tab_index/index_recommand.dart';
+import 'package:rent_share/widgets/common_swiper.dart';
+import 'package:rent_share/widgets/search_bar/index.dart' as custom;
 
 class TabIndex extends StatelessWidget {
   const TabIndex({Key? key}) : super(key: key);
@@ -36,3 +36,4 @@ class TabIndex extends StatelessWidget {
     );
   }
 }
+

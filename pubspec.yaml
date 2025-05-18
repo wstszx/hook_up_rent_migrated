@@ -1,5 +1,5 @@
-name: hook_up_rent
-description: A new Flutter project.
+name: rent_share
+description: 租享 - 房屋租赁应用.
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -57,9 +57,26 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   build_runner: ^2.4.13 # 代码生成工具
   json_serializable: ^6.9.0 # 代码生成工具
+  flutter_launcher_icons: ^0.13.1 # 应用图标生成工具
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+# 应用图标配置
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  adaptive_icon_background: "#FFFFFF" # 仅适用于 Android 8.0 及以上版本
+  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png" # 仅适用于 Android 8.0 及以上版本
+  min_sdk_android: 21 # Android 最低 SDK 版本
+  remove_alpha_ios: true
+  web:
+    generate: false
+  windows:
+    generate: false
+  macos:
+    generate: false
 
 # The following section is specific to Flutter packages.
 flutter:

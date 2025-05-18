@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/models/room.dart';
-import 'package:hook_up_rent/services/room_service.dart';
-import 'package:hook_up_rent/widgets/common_floating_button.dart';
-import 'package:hook_up_rent/widgets/room_list_item_widget.dart';
+import 'package:rent_share/models/room.dart';
+import 'package:rent_share/services/room_service.dart';
+import 'package:rent_share/widgets/common_floating_button.dart';
+import 'package:rent_share/widgets/room_list_item_widget.dart';
 
 class RoomManagePage extends StatefulWidget {
   const RoomManagePage({Key? key}) : super(key: key);
@@ -218,3 +218,4 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
     );
   }
 }
+

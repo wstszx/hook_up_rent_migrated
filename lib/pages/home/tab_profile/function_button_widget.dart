@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/tab_profile/function_button_data.dart';
-import 'package:hook_up_rent/widgets/common_image.dart';
+import 'package:rent_share/pages/home/tab_profile/function_button_data.dart';
+import 'package:rent_share/widgets/common_image.dart';
 
 class FunctionButtonWidget extends StatelessWidget {
   final FunctionButtonItem data;
@@ -28,3 +28,4 @@ class FunctionButtonWidget extends StatelessWidget {
     );
   }
 }
+

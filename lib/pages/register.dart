@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'utils/common_toast.dart';
 import 'utils/dio_http.dart';
 import '../../config.dart'; // Import Config
-// import 'package:hook_up_rent/pages/utils/common_toast.dart';
-// import 'package:hook_up_rent/pages/utils/dio_http.dart';
+// import 'package:rent_share/pages/utils/common_toast.dart';
+// import 'package:rent_share/pages/utils/dio_http.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -157,3 +157,4 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
+

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/tab_search/data_list.dart';
-import 'package:hook_up_rent/widgets/common_image.dart';
-import 'package:hook_up_rent/widgets/common_tag.dart';
+import 'package:rent_share/pages/home/tab_search/data_list.dart';
+import 'package:rent_share/widgets/common_image.dart';
+import 'package:rent_share/widgets/common_tag.dart';
 
 class RoomListItemWidget extends StatelessWidget {
   final RoomListItemData data;
@@ -48,3 +48,4 @@ class RoomListItemWidget extends StatelessWidget {
     );
   }
 }
+

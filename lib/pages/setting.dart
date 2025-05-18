@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/utils/common_toast.dart';
+import 'package:rent_share/pages/utils/common_toast.dart';
 
 import '../scoped_model/auth.dart';
 import 'utils/scoped_model_helper.dart';
@@ -29,3 +29,4 @@ class SettingPage extends StatelessWidget {
     );
   }
 }
+

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/widgets/common_form_item.dart';
+import 'package:rent_share/widgets/common_form_item.dart';
 
 class CommonRadioFormItem extends StatelessWidget {
   final String? label;
@@ -37,3 +37,4 @@ class CommonRadioFormItem extends StatelessWidget {
     );
   }
 }
+

@@ -2,16 +2,16 @@
 
 import 'package:fluro/fluro.dart';
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/index.dart';
-import 'package:hook_up_rent/pages/login.dart';
-import 'package:hook_up_rent/pages/register.dart';
-import 'package:hook_up_rent/pages/room_add/index.dart';
-import 'package:hook_up_rent/pages/room_detail/index.dart';
-import 'package:hook_up_rent/pages/room_manage/index.dart';
-import 'package:hook_up_rent/pages/setting.dart';
-import 'package:hook_up_rent/scoped_model/auth.dart';
-import 'package:hook_up_rent/scoped_model/room_filter.dart';
-import 'package:hook_up_rent/widgets/page_content.dart';
+import 'package:rent_share/pages/home/index.dart';
+import 'package:rent_share/pages/login.dart';
+import 'package:rent_share/pages/register.dart';
+import 'package:rent_share/pages/room_add/index.dart';
+import 'package:rent_share/pages/room_detail/index.dart';
+import 'package:rent_share/pages/room_manage/index.dart';
+import 'package:rent_share/pages/setting.dart';
+import 'package:rent_share/scoped_model/auth.dart';
+import 'package:rent_share/scoped_model/room_filter.dart';
+import 'package:rent_share/widgets/page_content.dart';
 import 'package:scoped_model/scoped_model.dart';
 
 import 'pages/routes.dart';
@@ -44,3 +44,4 @@ class Application extends StatelessWidget {
     );
   }
 }
+

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/utils/common_toast.dart';
-import 'package:hook_up_rent/pages/utils/store.dart';
+import 'package:rent_share/pages/utils/common_toast.dart';
+import 'package:rent_share/pages/utils/store.dart';
 import 'package:scoped_model/scoped_model.dart';
 
 import '../scoped_model/auth.dart';
@@ -132,3 +132,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+

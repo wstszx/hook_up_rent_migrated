@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/tab_index/index_recommand_data.dart';
-import 'package:hook_up_rent/pages/home/tab_index/index_recommand_item.dart';
-import 'package:hook_up_rent/pages/utils/dio_http.dart';
-import 'package:hook_up_rent/scoped_model/city.dart';
-import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
+import 'package:rent_share/pages/home/tab_index/index_recommand_data.dart';
+import 'package:rent_share/pages/home/tab_index/index_recommand_item.dart';
+import 'package:rent_share/pages/utils/dio_http.dart';
+import 'package:rent_share/scoped_model/city.dart';
+import 'package:rent_share/pages/utils/scoped_model_helper.dart';
 import 'package:dio/dio.dart'; // Import Dio for Response type if needed
 
 class IndexRecommand extends StatefulWidget {
@@ -178,3 +178,4 @@ class _IndexRecommandState extends State<IndexRecommand> {
     );
   }
 }
+

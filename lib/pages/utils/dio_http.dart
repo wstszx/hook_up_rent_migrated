@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import '../../models/general_type.dart'; // Added import for GeneralType
 
 import '../../config.dart';
-// import 'package:hook_up_rent/config.dart';
+// import 'package:rent_share/config.dart';
 
 class DioHttp {
   Dio? _client;
@@ -193,3 +193,4 @@ class DioHttp {
     }
   }
 }
+

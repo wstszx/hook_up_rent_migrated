@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/info/index.dart';
-import 'package:hook_up_rent/pages/home/tab_search/data_list.dart';
-import 'package:hook_up_rent/widgets/common_swiper.dart';
-import 'package:hook_up_rent/widgets/common_tag.dart';
-import 'package:hook_up_rent/widgets/common_title.dart';
-import 'package:hook_up_rent/widgets/room_appliance.dart';
+import 'package:rent_share/pages/home/info/index.dart';
+import 'package:rent_share/pages/home/tab_search/data_list.dart';
+import 'package:rent_share/widgets/common_swiper.dart';
+import 'package:rent_share/widgets/common_tag.dart';
+import 'package:rent_share/widgets/common_title.dart';
+import 'package:rent_share/widgets/room_appliance.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:hook_up_rent/pages/utils/dio_http.dart';
-import 'package:hook_up_rent/config.dart';
-import 'package:hook_up_rent/scoped_model/auth.dart';
-import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
-import 'package:hook_up_rent/pages/utils/common_toast.dart';
+import 'package:rent_share/pages/utils/dio_http.dart';
+import 'package:rent_share/config.dart';
+import 'package:rent_share/scoped_model/auth.dart';
+import 'package:rent_share/pages/utils/scoped_model_helper.dart';
+import 'package:rent_share/pages/utils/common_toast.dart';
 
 class RoomDetailPage extends StatefulWidget {
   const RoomDetailPage({Key? key}) : super(key: key);
@@ -386,3 +386,4 @@ class BaseInfoItem extends StatelessWidget {
     );
   }
 }
+

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/utils/common_toast.dart';
-import 'package:hook_up_rent/scoped_model/auth.dart';
-import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
-import 'package:hook_up_rent/pages/utils/dio_http.dart';
-import 'package:hook_up_rent/models/user_info.dart';
+import 'package:rent_share/pages/utils/common_toast.dart';
+import 'package:rent_share/scoped_model/auth.dart';
+import 'package:rent_share/pages/utils/scoped_model_helper.dart';
+import 'package:rent_share/pages/utils/dio_http.dart';
+import 'package:rent_share/models/user_info.dart';
 import 'package:dio/dio.dart'; // Add this import for Options class
 
 class ProfileEditPage extends StatefulWidget {

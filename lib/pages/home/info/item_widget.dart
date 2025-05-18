@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/info/info_data.dart';
-import 'package:hook_up_rent/widgets/common_image.dart';
+import 'package:rent_share/pages/home/info/info_data.dart';
+import 'package:rent_share/widgets/common_image.dart';
 
 var textStyle = const TextStyle(color: Colors.black54);
 
@@ -47,3 +47,4 @@ class InfoItemWidget extends StatelessWidget {
     );
   }
 }
+

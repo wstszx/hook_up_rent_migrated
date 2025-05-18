@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/tab_index/index_recommand_data.dart';
-import 'package:hook_up_rent/widgets/common_image.dart';
+import 'package:rent_share/pages/home/tab_index/index_recommand_data.dart';
+import 'package:rent_share/widgets/common_image.dart';
 
 var textStyle = const TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
 
@@ -59,3 +59,4 @@ class IndexRecommandItemWidget extends StatelessWidget {
     );
   }
 }
+

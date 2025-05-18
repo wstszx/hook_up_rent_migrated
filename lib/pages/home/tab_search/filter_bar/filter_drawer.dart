@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart';
-import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
-import 'package:hook_up_rent/scoped_model/room_filter.dart';
-import 'package:hook_up_rent/widgets/common_title.dart';
+import 'package:rent_share/pages/home/tab_search/filter_bar/data.dart';
+import 'package:rent_share/pages/utils/scoped_model_helper.dart';
+import 'package:rent_share/scoped_model/room_filter.dart';
+import 'package:rent_share/widgets/common_title.dart';
 
 class FilterDrawer extends StatelessWidget {
   const FilterDrawer({Key? key}) : super(key: key);
@@ -206,3 +206,4 @@ class FilterDrawerItem extends StatelessWidget {
     );
   }
 }
+

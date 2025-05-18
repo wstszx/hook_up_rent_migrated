@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/scoped_model/city.dart';
+import 'package:rent_share/scoped_model/city.dart';
 import 'package:scoped_model/scoped_model.dart';
 
 import '../../config.dart';
@@ -14,3 +14,4 @@ class ScopedModelHelper {
         Config.availableCitys.first.id;
   }
 }
+

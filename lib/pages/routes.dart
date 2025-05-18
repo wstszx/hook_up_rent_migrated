@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/index.dart';
+import 'package:rent_share/pages/home/index.dart';
 import 'package:fluro/fluro.dart';
-import 'package:hook_up_rent/pages/login.dart';
-import 'package:hook_up_rent/pages/home/tab_search/index.dart'; // 搜索页
-import 'package:hook_up_rent/pages/room_add/index.dart'; // 房源发布页
-import 'package:hook_up_rent/pages/map_house_page.dart'; // 地图页
-import 'package:hook_up_rent/pages/room_detail/index.dart'; // 房源详情页
-import 'package:hook_up_rent/pages/room_favorite/index.dart'; // 我的收藏页
-import 'package:hook_up_rent/pages/my_orders/index.dart'; // 我的预约页
-import 'package:hook_up_rent/pages/profile_edit.dart'; // 个人资料编辑页
-import 'package:hook_up_rent/pages/setting.dart'; // 设置页
-import 'package:hook_up_rent/pages/home/info/news_detail_page.dart'; // 资讯详情页
-import 'package:hook_up_rent/pages/home/info/info_data.dart'; // 导入 InfoItem 类型
-import 'package:hook_up_rent/pages/register.dart'; // 注册页
-import 'package:hook_up_rent/pages/room_manage/index.dart'; // 房屋管理页
+import 'package:rent_share/pages/login.dart';
+import 'package:rent_share/pages/home/tab_search/index.dart'; // 搜索页
+import 'package:rent_share/pages/room_add/index.dart'; // 房源发布页
+import 'package:rent_share/pages/map_house_page.dart'; // 地图页
+import 'package:rent_share/pages/room_detail/index.dart'; // 房源详情页
+import 'package:rent_share/pages/room_favorite/index.dart'; // 我的收藏页
+import 'package:rent_share/pages/my_orders/index.dart'; // 我的预约页
+import 'package:rent_share/pages/profile_edit.dart'; // 个人资料编辑页
+import 'package:rent_share/pages/setting.dart'; // 设置页
+import 'package:rent_share/pages/home/info/news_detail_page.dart'; // 资讯详情页
+import 'package:rent_share/pages/home/info/info_data.dart'; // 导入 InfoItem 类型
+import 'package:rent_share/pages/register.dart'; // 注册页
+import 'package:rent_share/pages/room_manage/index.dart'; // 房屋管理页
 
 class Routes {
   // 定义路由名称
@@ -123,3 +123,4 @@ class Routes {
     return const RoomManagePage();
   });
 }
+

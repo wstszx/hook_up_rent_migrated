@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/info/index.dart';
-import 'package:hook_up_rent/pages/home/tab_profile/advertisement.dart';
-import 'package:hook_up_rent/pages/home/tab_profile/function_button.dart';
-import 'package:hook_up_rent/pages/home/tab_profile/header.dart';
+import 'package:rent_share/pages/home/info/index.dart';
+import 'package:rent_share/pages/home/tab_profile/advertisement.dart';
+import 'package:rent_share/pages/home/tab_profile/function_button.dart';
+import 'package:rent_share/pages/home/tab_profile/header.dart';
 
 class TabProfile extends StatelessWidget {
   const TabProfile({Key? key}) : super(key: key);
@@ -30,3 +30,4 @@ class TabProfile extends StatelessWidget {
     );
   }
 }
+

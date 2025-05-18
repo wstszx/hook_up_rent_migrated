@@ -2,24 +2,24 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/utils/common_toast.dart';
-import 'package:hook_up_rent/pages/utils/dio_http.dart';
-import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
-import 'package:hook_up_rent/scoped_model/auth.dart';
-import 'package:hook_up_rent/widgets/room_appliance.dart';
+import 'package:rent_share/pages/utils/common_toast.dart';
+import 'package:rent_share/pages/utils/dio_http.dart';
+import 'package:rent_share/pages/utils/scoped_model_helper.dart';
+import 'package:rent_share/scoped_model/auth.dart';
+import 'package:rent_share/widgets/room_appliance.dart';
 // Import for filter data
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart' as filter_data;
+import 'package:rent_share/pages/home/tab_search/filter_bar/data.dart' as filter_data;
 import 'package:image_picker/image_picker.dart'; // Needed for XFile type
 import 'package:http_parser/http_parser.dart'; // For MediaType
 import 'package:mime/mime.dart'; // For lookupMimeType
 import 'package:path/path.dart' as p; // For p.extension
-import 'package:hook_up_rent/widgets/common_floating_button.dart';
-import 'package:hook_up_rent/widgets/common_form_item.dart';
-import 'package:hook_up_rent/widgets/common_image_picker.dart';
-import 'package:hook_up_rent/widgets/common_radio_form_item.dart';
-import 'package:hook_up_rent/widgets/common_select_form_item.dart';
-import 'package:hook_up_rent/widgets/common_title.dart';
-import 'package:hook_up_rent/services/region_service.dart'; // 引入 RegionService
+import 'package:rent_share/widgets/common_floating_button.dart';
+import 'package:rent_share/widgets/common_form_item.dart';
+import 'package:rent_share/widgets/common_image_picker.dart';
+import 'package:rent_share/widgets/common_radio_form_item.dart';
+import 'package:rent_share/widgets/common_select_form_item.dart';
+import 'package:rent_share/widgets/common_title.dart';
+import 'package:rent_share/services/region_service.dart'; // 引入 RegionService
 
 class RoomAddPage extends StatefulWidget {
   const RoomAddPage({Key? key}) : super(key: key);
@@ -375,3 +375,4 @@ class _RoomAddPageState extends State<RoomAddPage> {
     );
   }
 }
+

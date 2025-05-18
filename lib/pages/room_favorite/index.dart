@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/utils/dio_http.dart';
-import 'package:hook_up_rent/config.dart';
-// import 'package:hook_up_rent/widgets/common_image.dart'; // CommonImage is used within RoomListItemWidget
-import 'package:hook_up_rent/pages/home/tab_search/data_list.dart'; // Corrected import for RoomListItemData
-import 'package:hook_up_rent/widgets/root_list_item_widget.dart'; // 使用现有的房源列表项Widget
-import 'package:hook_up_rent/scoped_model/auth.dart';
-import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
+import 'package:rent_share/pages/utils/dio_http.dart';
+import 'package:rent_share/config.dart';
+// import 'package:rent_share/widgets/common_image.dart'; // CommonImage is used within RoomListItemWidget
+import 'package:rent_share/pages/home/tab_search/data_list.dart'; // Corrected import for RoomListItemData
+import 'package:rent_share/widgets/root_list_item_widget.dart'; // 使用现有的房源列表项Widget
+import 'package:rent_share/scoped_model/auth.dart';
+import 'package:rent_share/pages/utils/scoped_model_helper.dart';
  
 class RoomFavoritePage extends StatefulWidget {
   const RoomFavoritePage({super.key});

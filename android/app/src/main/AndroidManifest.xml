@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
-        android:label="hook_up_rent_migrated"
+        android:label="租享"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

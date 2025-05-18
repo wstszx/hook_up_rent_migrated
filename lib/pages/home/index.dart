@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/tab_index/index.dart';
-import 'package:hook_up_rent/pages/home/tab_info/index.dart';
-import 'package:hook_up_rent/pages/home/tab_profile/index.dart';
-import 'package:hook_up_rent/pages/home/tab_search/index.dart';
+import 'package:rent_share/pages/home/tab_index/index.dart';
+import 'package:rent_share/pages/home/tab_info/index.dart';
+import 'package:rent_share/pages/home/tab_profile/index.dart';
+import 'package:rent_share/pages/home/tab_search/index.dart';
 
 List tabViewList = [
   const TabIndex(),
@@ -49,3 +49,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+

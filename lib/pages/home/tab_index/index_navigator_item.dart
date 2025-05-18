@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart'; // 引入ScopedModelHelper
-import 'package:hook_up_rent/scoped_model/auth.dart'; // 引入AuthModel
+import 'package:rent_share/pages/utils/scoped_model_helper.dart'; // 引入ScopedModelHelper
+import 'package:rent_share/scoped_model/auth.dart'; // 引入AuthModel
 
 // 点击导航区域传递的数据结构：包含 导航名称、图片、点击事件
 class IndexNavigatorItem {
@@ -38,3 +38,4 @@ List<IndexNavigatorItem> indexNavigatorItemList = [
     }
   }),
 ];
+

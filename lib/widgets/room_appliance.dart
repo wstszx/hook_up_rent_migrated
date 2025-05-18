@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/config.dart';
-import 'package:hook_up_rent/widgets/common_check_button.dart';
+import 'package:rent_share/config.dart';
+import 'package:rent_share/widgets/common_check_button.dart';
 
 class RoomApplianceItem {
   final String title;
@@ -121,3 +121,4 @@ class RoomApplicanceList extends StatelessWidget {
     );
   }
 }
+

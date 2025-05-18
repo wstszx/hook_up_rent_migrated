@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/info/info_data.dart';
-import 'package:hook_up_rent/pages/home/info/item_widget.dart';
+import 'package:rent_share/pages/home/info/info_data.dart';
+import 'package:rent_share/pages/home/info/item_widget.dart';
 
 class Info extends StatelessWidget {
   final bool showTitle;
@@ -42,3 +42,4 @@ class Info extends StatelessWidget {
     );
   }
 }
+

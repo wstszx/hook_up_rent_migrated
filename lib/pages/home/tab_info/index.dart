@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/info/index.dart';
-import 'package:hook_up_rent/widgets/search_bar/index.dart' as custom;
+import 'package:rent_share/pages/home/info/index.dart';
+import 'package:rent_share/widgets/search_bar/index.dart' as custom;
 
 class TabInfo extends StatefulWidget {
   const TabInfo({Key? key}) : super(key: key);
@@ -32,3 +32,4 @@ class _TabInfoState extends State<TabInfo> {
     );
   }
 }
+

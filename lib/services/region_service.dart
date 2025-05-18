@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart' as file_data;
+import 'package:rent_share/pages/home/tab_search/filter_bar/data.dart' as file_data;
 
 class RegionInfo {
   final String name;
@@ -201,3 +201,4 @@ class RegionService {
     return result;
   }
 }
+

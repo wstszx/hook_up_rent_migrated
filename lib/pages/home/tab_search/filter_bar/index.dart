@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 // Add alias for data import to avoid naming conflicts with class members
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart' as file_data;
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/item.dart';
-import 'package:hook_up_rent/pages/utils/common_picker/index.dart';
-import 'package:hook_up_rent/pages/utils/scoped_model_helper.dart';
-import 'package:hook_up_rent/scoped_model/city.dart'; // 导入 CityModel
-import 'package:hook_up_rent/scoped_model/room_filter.dart';
-import 'package:hook_up_rent/pages/utils/dio_http.dart'; // <--- 引入 DioHttp
-import 'package:hook_up_rent/services/region_service.dart'; // 引入 RegionService
+import 'package:rent_share/pages/home/tab_search/filter_bar/data.dart' as file_data;
+import 'package:rent_share/pages/home/tab_search/filter_bar/item.dart';
+import 'package:rent_share/pages/utils/common_picker/index.dart';
+import 'package:rent_share/pages/utils/scoped_model_helper.dart';
+import 'package:rent_share/scoped_model/city.dart'; // 导入 CityModel
+import 'package:rent_share/scoped_model/room_filter.dart';
+import 'package:rent_share/pages/utils/dio_http.dart'; // <--- 引入 DioHttp
+import 'package:rent_share/services/region_service.dart'; // 引入 RegionService
 
 class FilterBar extends StatefulWidget {
   final ValueChanged<file_data.FilterBarResult>? onChange;
@@ -463,3 +463,4 @@ class _FilterBarState extends State<FilterBar> {
     );
   }
 }
+

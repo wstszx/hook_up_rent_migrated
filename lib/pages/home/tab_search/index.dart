@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:scoped_model/scoped_model.dart';
-import 'package:hook_up_rent/scoped_model/city.dart';
-import 'package:hook_up_rent/config.dart';
-import 'package:hook_up_rent/pages/home/tab_search/data_list.dart';
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/filter_drawer.dart';
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/index.dart';
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart' as filter_data; // Added import
-import 'package:hook_up_rent/pages/utils/dio_http.dart';
-import 'package:hook_up_rent/widgets/root_list_item_widget.dart';
-import 'package:hook_up_rent/widgets/search_bar/index.dart' as custom;
+import 'package:rent_share/scoped_model/city.dart';
+import 'package:rent_share/config.dart';
+import 'package:rent_share/pages/home/tab_search/data_list.dart';
+import 'package:rent_share/pages/home/tab_search/filter_bar/filter_drawer.dart';
+import 'package:rent_share/pages/home/tab_search/filter_bar/index.dart';
+import 'package:rent_share/pages/home/tab_search/filter_bar/data.dart' as filter_data; // Added import
+import 'package:rent_share/pages/utils/dio_http.dart';
+import 'package:rent_share/widgets/root_list_item_widget.dart';
+import 'package:rent_share/widgets/search_bar/index.dart' as custom;
 
 class TabSearch extends StatefulWidget {
   const TabSearch({Key? key}) : super(key: key);
@@ -204,3 +204,4 @@ class _TabSearchState extends State<TabSearch> {
     );
   }
 }
+

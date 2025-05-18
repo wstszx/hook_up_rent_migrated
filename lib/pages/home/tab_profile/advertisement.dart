@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/widgets/common_image.dart';
+import 'package:rent_share/widgets/common_image.dart';
 
 class Advertisement extends StatelessWidget {
   const Advertisement({Key? key}) : super(key: key);
@@ -13,3 +13,4 @@ class Advertisement extends StatelessWidget {
     );
   }
 }
+

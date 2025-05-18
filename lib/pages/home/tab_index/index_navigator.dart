@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/tab_index/index_navigator_item.dart';
-import 'package:hook_up_rent/widgets/common_image.dart';
+import 'package:rent_share/pages/home/tab_index/index_navigator_item.dart';
+import 'package:rent_share/widgets/common_image.dart';
 
 class IndexNavigator extends StatelessWidget {
   const IndexNavigator({Key? key}) : super(key: key);
@@ -31,3 +31,4 @@ class IndexNavigator extends StatelessWidget {
     );
   }
 }
+

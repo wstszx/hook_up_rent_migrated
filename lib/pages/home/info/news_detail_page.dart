@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/home/info/info_data.dart';
+import 'package:rent_share/pages/home/info/info_data.dart';
 
 class NewsDetailPage extends StatelessWidget {
   final InfoItem data;
@@ -72,3 +72,4 @@ class NewsDetailPage extends StatelessWidget {
     );
   }
 }
+

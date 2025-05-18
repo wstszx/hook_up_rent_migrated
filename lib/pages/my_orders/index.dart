@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart'; // Add this line
-import 'package:hook_up_rent/pages/utils/dio_http.dart';
-import 'package:hook_up_rent/pages/utils/common_toast.dart';
-import 'package:hook_up_rent/widgets/root_list_item_widget.dart'; // Corrected path
-import 'package:hook_up_rent/pages/home/tab_search/data_list.dart'; // Corrected path
-import 'package:hook_up_rent/config.dart'; // 需要Config来获取API Host
-import 'package:hook_up_rent/pages/utils/store.dart'; // 用于获取用户token
-import 'package:hook_up_rent/scoped_model/auth.dart'; // 用于获取用户信息
+import 'package:rent_share/pages/utils/dio_http.dart';
+import 'package:rent_share/pages/utils/common_toast.dart';
+import 'package:rent_share/widgets/root_list_item_widget.dart'; // Corrected path
+import 'package:rent_share/pages/home/tab_search/data_list.dart'; // Corrected path
+import 'package:rent_share/config.dart'; // 需要Config来获取API Host
+import 'package:rent_share/pages/utils/store.dart'; // 用于获取用户token
+import 'package:rent_share/scoped_model/auth.dart'; // 用于获取用户信息
 import 'package:scoped_model/scoped_model.dart';
 
 // 预约数据模型 (根据后端API调整)

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hook_up_rent/pages/utils/common_picker/index.dart';
-import 'package:hook_up_rent/widgets/common_form_item.dart';
+import 'package:rent_share/pages/utils/common_picker/index.dart';
+import 'package:rent_share/widgets/common_form_item.dart';
 
 class CommonSelectFormItem extends StatelessWidget {
   final String label;
@@ -76,3 +76,4 @@ String _getDisplayText(List<String>? options, int? value) {
   }
 }
 }
+

@@ -1,4 +1,4 @@
-import 'package:hook_up_rent/pages/home/tab_search/filter_bar/data.dart';
+import 'package:rent_share/pages/home/tab_search/filter_bar/data.dart';
 import 'package:scoped_model/scoped_model.dart';
 
 class FilterBarModel extends Model {
@@ -218,3 +218,4 @@ class FilterBarModel extends Model {
     return params;
   }
 }
+
