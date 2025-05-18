@@ -28,10 +28,28 @@ class OrderItemData {
   });
 
   factory OrderItemData.fromJson(Map<String, dynamic> json) {
-    // 注意：这里的 'room' 是一个嵌套对象，需要用 RoomListItemData.fromJson 解析
-    // 后端返回的 room 数据结构可能与 RoomListItemData 不完全一致，需要适配
-    // 例如，后端返回的 images 是字符串数组，而 RoomListItemData 需要的是 List<String>
-    // 这里的解析需要根据 GET /api/me/orders 返回的具体房源数据结构进行调整
+    // 检查 'room' 字段是否存在且不为 null
+    if (json['room'] == null) {
+      // 如果 room 为 null，创建一个默认的房源数据
+      print('[OrderItemData] Warning: room data is null in order ${json['_id'] ?? 'unknown'}');
+      return OrderItemData(
+        id: json['_id'] ?? '',
+        room: RoomListItemData(
+          id: '',
+          title: '数据不可用',
+          subTitle: '房源信息缺失',
+          imageUrl: Config.DefaultImage,
+          price: 0,
+          tags: [],
+        ),
+        status: json['status'] ?? 'unknown',
+        appointmentTime: json['appointmentTime'] != null ? DateTime.parse(json['appointmentTime']) : null,
+        publisherUsername: json['publisher'] != null ? (json['publisher']['username'] ?? '未知房东') : '未知房东',
+        createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      );
+    }
+    
+    // 确保 room 是 Map<String, dynamic> 类型
     var roomDataJson = json['room'] as Map<String, dynamic>;
     
     // 确保 images 字段是 List<String>
@@ -122,7 +140,10 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             print('[MyOrdersPage] Orders data is empty list.');
           }
           setState(() {
-            _orders = dataList.map((item) => OrderItemData.fromJson(item as Map<String, dynamic>)).toList();
+            _orders = dataList
+                .where((item) => item != null) // Filter out null items
+                .map((item) => OrderItemData.fromJson(item as Map<String, dynamic>))
+                .toList();
             _isLoading = false;
             print('[MyOrdersPage] Orders loaded and UI updated. isLoading: $_isLoading');
           });
