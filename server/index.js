@@ -5,6 +5,17 @@ const app = express();
 const port = 3000;
 const connectDB = require('./config/db'); // 引入数据库连接函数
 
+// 添加CORS中间件
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
 // 引入模型用于Seeding
 const User = require('./models/User');
 const Room = require('./models/Room');

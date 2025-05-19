@@ -17,12 +17,12 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
   List<Room> _availableRooms = [];
   bool _isLoading = true;
   String? _errorMessage;
+  bool _dataLoaded = false; // 添加标志避免重复加载数据
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _fetchRooms();
 
     // 监听标签切换，可以在切换时重新加载数据
     _tabController.addListener(() {
@@ -30,6 +30,16 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
         // 可以在这里根据需要重新加载数据
       }
     });
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 在 didChangeDependencies 中加载数据，这样可以安全地访问 InheritedWidget
+    if (!_dataLoaded) {
+      _fetchRooms();
+      _dataLoaded = true;
+    }
   }
 
   @override
@@ -46,7 +56,7 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
     });
 
     try {
-      // 获取所有房源
+      // 使用临时令牌获取房源数据，避免依赖 ScopedModel
       final allRooms = await RoomService.getUserRooms();
       
       // 分类处理
@@ -66,7 +76,7 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
   // 更新房源状态
   Future<void> _updateRoomStatus(Room room, String newStatus) async {
     try {
-      final success = await RoomService.updateRoomStatus(room.id, newStatus);
+      final success = await RoomService.updateRoomStatus(room.id, newStatus, context: context);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('房源状态更新成功')),
@@ -104,7 +114,7 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
     if (confirm != true) return;
 
     try {
-      final success = await RoomService.deleteRoom(room.id);
+      final success = await RoomService.deleteRoom(room.id, context: context);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('房源删除成功')),
@@ -148,7 +158,7 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
             const Text('暂无房源数据'),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, 'room_add'),
+              onPressed: () => Navigator.pushNamed(context, '/room-add'),
               child: const Text('去发布房源'),
             ),
           ],
@@ -187,7 +197,7 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: CommonFloatingActionButton(
         '发布房源',
-        () => Navigator.pushNamed(context, 'room_add').then((_) {
+        () => Navigator.pushNamed(context, '/room-add').then((_) {
           _fetchRooms(); // 发布完成后刷新数据
         }),
       ),
