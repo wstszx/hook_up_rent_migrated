@@ -56,8 +56,8 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
     });
 
     try {
-      // 使用临时令牌获取房源数据，避免依赖 ScopedModel
-      final allRooms = await RoomService.getUserRooms();
+      // 传递 context 参数给 getUserRooms 方法
+      final allRooms = await RoomService.getUserRooms(context: context);
       
       // 分类处理
       setState(() {

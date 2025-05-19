@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../config.dart';
 import '../models/room.dart';
 import '../utils/dio_http.dart';
@@ -35,9 +36,9 @@ class RoomService {
       }
 
       final url = '/api/me/rooms';
-      final params = status != null ? {'status': status} : null;
+      final Map<String, dynamic>? params = status != null ? {'status': status} : null;
       
-      // 发送网络请求获取用户发布的房源数据
+      // 发送网络请求获取用户发布的房源数据，使用正确的参数格式
       final response = await DioHttp.of().get(
         url,
         queryParameters: params,
@@ -101,7 +102,7 @@ class RoomService {
 
       final url = '/api/rooms/$roomId';
       
-      // 发送网络请求更新房源状态
+      // 发送网络请求更新房源状态，使用正确的参数格式
       final response = await DioHttp.of().put(
         url,
         data: jsonEncode({'status': status}),
@@ -155,7 +156,7 @@ class RoomService {
 
       final url = '/api/rooms/$roomId';
       
-      // 发送网络请求删除房源
+      // 发送网络请求删除房源，使用正确的参数格式
       final response = await DioHttp.of().delete(
         url,
         options: {'token': token},
