@@ -30,6 +30,7 @@ class Routes {
   static String newsDetail = 'news_detail'; // 资讯详情页
   static String register = 'register'; // 注册页
   static String roomManage = 'room_manage'; // 房屋管理页
+  static String roomEdit = 'room_edit'; // 房屋编辑页
  
   static void configureRoutes(FluroRouter router) {
     router.define(home, handler: _homeHandler);
@@ -51,6 +52,8 @@ class Routes {
     router.define(newsDetail, handler: _newsDetailHandler, transitionType: TransitionType.native);
     router.define(register, handler: _registerHandler, transitionType: TransitionType.native);
     router.define(roomManage, handler: _roomManageHandler, transitionType: TransitionType.native);
+    // Define room_edit/:id route to handle room editing with ID parameter
+    router.define('$roomEdit/:id', handler: _roomEditHandler, transitionType: TransitionType.native);
   }
  
   // 定义路由处理函数
@@ -121,6 +124,13 @@ class Routes {
   static final Handler _roomManageHandler = Handler(
       handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
     return const RoomManagePage();
+  });
+  
+  static final Handler _roomEditHandler = Handler(
+      handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
+    // RoomEditPage will be created to handle room editing
+    // It will reuse RoomAddPage with an id parameter
+    return const RoomAddPage(isEdit: true);
   });
 }
 

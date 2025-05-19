@@ -22,13 +22,17 @@ import 'package:rent_share/widgets/common_title.dart';
 import 'package:rent_share/services/region_service.dart'; // 引入 RegionService
 
 class RoomAddPage extends StatefulWidget {
-  const RoomAddPage({Key? key}) : super(key: key);
+  final bool isEdit;
+  const RoomAddPage({Key? key, this.isEdit = false}) : super(key: key);
 
   @override
   State<RoomAddPage> createState() => _RoomAddPageState();
 }
 
 class _RoomAddPageState extends State<RoomAddPage> {
+  // Room ID for editing mode
+  String? roomId;
+  bool isLoading = false;
   // --- Form Controllers ---
   var titleController = TextEditingController();
   var descController = TextEditingController();
@@ -57,6 +61,99 @@ class _RoomAddPageState extends State<RoomAddPage> {
   void initState() {
     super.initState();
     _loadCityDistrictData();
+    
+    // If in edit mode, get the room ID from route parameters
+    if (widget.isEdit) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _getRoomIdAndLoadData();
+      });
+    }
+  }
+
+  // Get room ID from route and load room data
+  void _getRoomIdAndLoadData() {
+    final Uri uri = Uri.parse(ModalRoute.of(context)!.settings.name!);
+    final String pathSegments = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
+    
+    if (pathSegments.isNotEmpty) {
+      setState(() {
+        roomId = pathSegments;
+        isLoading = true;
+      });
+      _loadRoomData(roomId!);
+    }
+  }
+
+  // Load room data for editing
+  Future<void> _loadRoomData(String id) async {
+    try {
+      final auth = ScopedModelHelper.getModel<AuthModel>(context);
+      final token = auth.token;
+      
+      final String endpoint = widget.isEdit ? '/user/rooms/$id' : '/user/rooms';
+      final DioHttp dioHttp = DioHttp.of(context);
+      
+      final response = await (widget.isEdit ? 
+        dioHttp.put(endpoint, data: {}, token: token) :
+        dioHttp.get('/user/rooms/$id', null, token)
+      );
+      
+      final data = response.data['data'];
+      if (data != null) {
+        // Set form values from loaded data
+        setState(() {
+          titleController.text = data['title'] ?? '';
+          descController.text = data['description'] ?? '';
+          communityController.text = data['address'] ?? '';
+          priceController.text = data['price']?.toString() ?? '';
+          sizeController.text = data['size']?.toString() ?? '';
+          
+          // Set city and district
+          _selectedCityName = data['city'];
+          _selectedDistrict = data['district'];
+          
+          // Set rent type
+          rentType = data['rentType'] == '整租' ? 1 : 0;
+          
+          // Set room type, floor, and orientation
+          selectedRoomTypeId = filter_data.roomTypeList
+              .firstWhere((item) => item.name == data['roomType'], 
+                  orElse: () => filter_data.roomTypeList.first).id;
+          
+          selectedFloorId = filter_data.floorList
+              .firstWhere((item) => item.name == data['floor'], 
+                  orElse: () => filter_data.floorList.first).id;
+          
+          selectedOrientedId = filter_data.orientedList
+              .firstWhere((item) => item.name == data['oriented'], 
+                  orElse: () => filter_data.orientedList.first).id;
+          
+          // Set decoration type from tags if available
+          final tags = data['tags'] as List?;
+          if (tags != null) {
+            decorationType = tags.contains('精装') ? 0 : 1;
+            
+            // Set appliances from tags
+            _selectedAppliances = tags.where((tag) => 
+                !['精装', '简装'].contains(tag)).cast<String>().toList();
+          }
+          
+          // Set images if available
+          if (data['images'] != null && data['images'] is List) {
+            // We can't set _pickedImages directly as they are remote URLs
+            // Instead, we'll show them in the UI but handle them differently during submission
+          }
+          
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading room data: $e');
+      CommonToast.showToast('获取房源数据失败');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadCityDistrictData() async {
@@ -97,6 +194,8 @@ class _RoomAddPageState extends State<RoomAddPage> {
   String _getDecorationTypeString(int val) => ['精装', '简装'][val];
 
   Future<void> _submit() async {
+    // Determine if this is an add or update operation
+    final bool isUpdate = widget.isEdit && roomId != null;
     // 1. Validate form data
     final title = titleController.text;
     final description = descController.text;
@@ -141,7 +240,8 @@ class _RoomAddPageState extends State<RoomAddPage> {
       tags.add('$size平方米');
     }
     
-    Map<String, dynamic> data = {
+    Map<String, dynamic> params = {
+      if (isUpdate) 'id': roomId,
       'title': title,
       'description': description,
       'price': parsedPrice,
@@ -166,7 +266,7 @@ class _RoomAddPageState extends State<RoomAddPage> {
     final token = auth.token;
 
     // 4. Prepare FormData for image uploads
-    FormData formData = FormData.fromMap(data);
+    FormData formData = FormData.fromMap(params);
     if (_pickedImages.isNotEmpty) {
       for (var i = 0; i < _pickedImages.length; i++) {
         File imageFile = _pickedImages[i];
@@ -236,9 +336,7 @@ class _RoomAddPageState extends State<RoomAddPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('房源发布'),
-      ),
+      appBar: AppBar(title: Text(widget.isEdit ? '编辑房源' : '发布房源')),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: CommonFloatingActionButton('提交', _submit), // Call _submit
       body: ListView(

@@ -179,7 +179,7 @@ class _RoomManagePageState extends State<RoomManagePage> with SingleTickerProvid
               Navigator.pushNamed(context, 'room_detail/${room.id}');
             },
             onEdit: () {
-              // 跳转到编辑页面
+              // 跳转到编辑页面，使用正确的路由格式
               Navigator.pushNamed(context, 'room_edit/${room.id}').then((_) {
                 _fetchRooms(); // 编辑完成后刷新数据
               });
