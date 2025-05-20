@@ -420,10 +420,15 @@ class _SearchBarState extends State<SearchBar> {
             ),
           // 显示地图
           if (widget.showMap ?? false)
-            const CommonImage(
-              'static/icons/widget_search_bar_map.png',
-              width: 40,
-              height: 40,
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).pushNamed('map');
+              },
+              child: const CommonImage(
+                'static/icons/widget_search_bar_map.png',
+                width: 40,
+                height: 40,
+              ),
             ),
         ],
       ),
