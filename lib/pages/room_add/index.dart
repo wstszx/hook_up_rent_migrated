@@ -23,15 +23,14 @@ import 'package:rent_share/services/region_service.dart'; // 引入 RegionServic
 
 class RoomAddPage extends StatefulWidget {
   final bool isEdit;
-  const RoomAddPage({Key? key, this.isEdit = false}) : super(key: key);
+  final String? roomIdForEdit; // Add roomIdForEdit parameter
+  const RoomAddPage({Key? key, this.isEdit = false, this.roomIdForEdit}) : super(key: key);
 
   @override
   State<RoomAddPage> createState() => _RoomAddPageState();
 }
 
 class _RoomAddPageState extends State<RoomAddPage> {
-  // Room ID for editing mode
-  String? roomId;
   bool isLoading = false;
   // --- Form Controllers ---
   var titleController = TextEditingController();
@@ -61,26 +60,12 @@ class _RoomAddPageState extends State<RoomAddPage> {
   void initState() {
     super.initState();
     _loadCityDistrictData();
-    
-    // If in edit mode, get the room ID from route parameters
-    if (widget.isEdit) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _getRoomIdAndLoadData();
-      });
-    }
-  }
 
-  // Get room ID from route and load room data
-  void _getRoomIdAndLoadData() {
-    final Uri uri = Uri.parse(ModalRoute.of(context)!.settings.name!);
-    final String pathSegments = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
-    
-    if (pathSegments.isNotEmpty) {
-      setState(() {
-        roomId = pathSegments;
-        isLoading = true;
+    // If in edit mode and roomId is provided, load room data
+    if (widget.isEdit && widget.roomIdForEdit != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadRoomData(widget.roomIdForEdit!);
       });
-      _loadRoomData(roomId!);
     }
   }
 
@@ -89,15 +74,12 @@ class _RoomAddPageState extends State<RoomAddPage> {
     try {
       final auth = ScopedModelHelper.getModel<AuthModel>(context);
       final token = auth.token;
-      
-      final String endpoint = widget.isEdit ? '/user/rooms/$id' : '/user/rooms';
+
       final DioHttp dioHttp = DioHttp.of(context);
-      
-      final response = await (widget.isEdit ? 
-        dioHttp.put(endpoint, data: {}, token: token) :
-        dioHttp.get('/user/rooms/$id', null, token)
-      );
-      
+
+      // Fetch single room data using GET request
+      final response = await dioHttp.get('/api/rooms/$id', null, token);
+
       final data = response.data['data'];
       if (data != null) {
         // Set form values from loaded data
@@ -107,43 +89,44 @@ class _RoomAddPageState extends State<RoomAddPage> {
           communityController.text = data['address'] ?? '';
           priceController.text = data['price']?.toString() ?? '';
           sizeController.text = data['size']?.toString() ?? '';
-          
+
           // Set city and district
           _selectedCityName = data['city'];
           _selectedDistrict = data['district'];
-          
+
           // Set rent type
           rentType = data['rentType'] == '整租' ? 1 : 0;
-          
-          // Set room type, floor, and orientation
+
+          // Set room type, floor, and orientation by finding the corresponding ID
           selectedRoomTypeId = filter_data.roomTypeList
-              .firstWhere((item) => item.name == data['roomType'], 
+              .firstWhere((item) => item.name == data['roomType'],
                   orElse: () => filter_data.roomTypeList.first).id;
-          
+
           selectedFloorId = filter_data.floorList
-              .firstWhere((item) => item.name == data['floor'], 
+              .firstWhere((item) => item.name == data['floor'],
                   orElse: () => filter_data.floorList.first).id;
-          
+
           selectedOrientedId = filter_data.orientedList
-              .firstWhere((item) => item.name == data['oriented'], 
+              .firstWhere((item) => item.name == data['oriented'],
                   orElse: () => filter_data.orientedList.first).id;
-          
+
           // Set decoration type from tags if available
           final tags = data['tags'] as List?;
           if (tags != null) {
             decorationType = tags.contains('精装') ? 0 : 1;
-            
+
             // Set appliances from tags
-            _selectedAppliances = tags.where((tag) => 
+            _selectedAppliances = tags.where((tag) =>
                 !['精装', '简装'].contains(tag)).cast<String>().toList();
           }
-          
-          // Set images if available
+
+          // Set images if available (Note: We can't directly set _pickedImages with remote URLs)
+          // You might need a different approach to display existing images,
+          // perhaps a separate list of image URLs.
           if (data['images'] != null && data['images'] is List) {
-            // We can't set _pickedImages directly as they are remote URLs
-            // Instead, we'll show them in the UI but handle them differently during submission
+             // Handle displaying existing images if needed
           }
-          
+
           isLoading = false;
         });
       }
@@ -160,18 +143,18 @@ class _RoomAddPageState extends State<RoomAddPage> {
     try {
       // 确保 RegionService 已加载数据
       await RegionService.loadRegionData();
-      
+
       setState(() {
         _cities = RegionService.getCityList();
-        
+
         // 预选第一个城市
         if (_cities.isNotEmpty) {
           _selectedCityName = _cities.first.name;
           _districts = RegionService.getDistrictsByCityName(_selectedCityName!);
-          
+
           // 预选第一个区域
           if (_districts.isNotEmpty) {
-            _selectedDistrict = _districts.first.name;
+            _selectedDistrict = _districts.isNotEmpty ? _districts.first.name : null;
           }
         }
       });
@@ -195,7 +178,7 @@ class _RoomAddPageState extends State<RoomAddPage> {
 
   Future<void> _submit() async {
     // Determine if this is an add or update operation
-    final bool isUpdate = widget.isEdit && roomId != null;
+    final bool isUpdate = widget.isEdit && widget.roomIdForEdit != null;
     // 1. Validate form data
     final title = titleController.text;
     final description = descController.text;
@@ -208,21 +191,22 @@ class _RoomAddPageState extends State<RoomAddPage> {
 
     // 创建一个列表来收集所有缺失的字段
     List<String> missingFields = [];
-    
+
     // 检查所有必填字段
     if (title.isEmpty) missingFields.add('标题');
     if (city.isEmpty) missingFields.add('城市');
     if (district.isEmpty) missingFields.add('行政区');
     if (address.isEmpty) missingFields.add('小区/地址');
     if (price.isEmpty) missingFields.add('租金');
-    if (_pickedImages.isEmpty) missingFields.add('房屋图像');
-    
+    // Note: For editing, images might already exist. You might need to adjust this validation.
+    if (_pickedImages.isEmpty && !isUpdate) missingFields.add('房屋图像');
+
     // 如果有缺失字段，显示具体的错误信息
     if (missingFields.isNotEmpty) {
       CommonToast.showToast('请填写以下必填项: ${missingFields.join('、')}');
       return;
     }
-    
+
     // 验证租金格式
     double? parsedPrice;
     try {
@@ -239,9 +223,9 @@ class _RoomAddPageState extends State<RoomAddPage> {
     if (size.isNotEmpty) {
       tags.add('$size平方米');
     }
-    
+
     Map<String, dynamic> params = {
-      if (isUpdate) 'id': roomId,
+      if (isUpdate) 'id': widget.roomIdForEdit, // Use widget.roomIdForEdit
       'title': title,
       'description': description,
       'price': parsedPrice,
@@ -282,7 +266,7 @@ class _RoomAddPageState extends State<RoomAddPage> {
 
         // Fallback if MIME type couldn't be determined, though unlikely for valid images
         mediaType ??= MediaType('application', 'octet-stream');
-        
+
         // Get file extension for the filename
         String extension = p.extension(imageFile.path); // e.g. '.jpg'
         if (extension.startsWith('.')) {
@@ -300,26 +284,32 @@ class _RoomAddPageState extends State<RoomAddPage> {
         ));
       }
     }
-    
+
     // 5. Send request
     CommonToast.showToast('正在提交...');
     print('Attempting to submit with token: "$token"'); // Debug: Print token
     try {
-      var response = await DioHttp.of(context).post(
-        '/api/rooms',
-        data: formData, // Pass FormData directly as data
-        token: token,
-        // Dio will automatically set Content-Type for FormData if data is FormData
-        // options: Options(contentType: 'multipart/form-data'), // This line is usually not needed if data is FormData and DioHttp.post is correctly modified
-      );
+      // Use PUT for update, POST for add
+      var response = isUpdate
+          ? await DioHttp.of(context).put(
+              '/api/rooms/${widget.roomIdForEdit}', // Use PUT endpoint with ID
+              data: formData,
+              token: token,
+            )
+          : await DioHttp.of(context).post(
+              '/api/rooms', // Use POST endpoint for new room
+              data: formData,
+              token: token,
+            );
 
-      if (response.statusCode == 201) {
-        CommonToast.showToast('房源发布成功！');
+
+      if (response.statusCode == 201 || response.statusCode == 200) { // 201 for create, 200 for update
+        CommonToast.showToast(isUpdate ? '房源更新成功！' : '房源发布成功！');
         if (mounted) {
           Navigator.of(context).pop(true); // Pop and indicate success
         }
       } else {
-        String errorMessage = response.data?['message'] ?? '发布失败，请稍后再试';
+        String errorMessage = response.data?['message'] ?? (isUpdate ? '更新失败，请稍后再试' : '发布失败，请稍后再试');
         CommonToast.showToast(errorMessage);
       }
     } catch (e) {
@@ -487,4 +477,3 @@ class _RoomAddPageState extends State<RoomAddPage> {
     );
   }
 }
-

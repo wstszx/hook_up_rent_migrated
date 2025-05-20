@@ -134,9 +134,10 @@ class Routes {
   
   static final Handler _roomEditHandler = Handler(
       handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
-    // RoomEditPage will be created to handle room editing
-    // It will reuse RoomAddPage with an id parameter
-    return const RoomAddPage(isEdit: true);
+    // 从路由参数中获取房源ID
+    final String? roomId = params['id']?.first;
+    // 将房源ID作为参数传递给RoomAddPage
+    return RoomAddPage(isEdit: true, roomIdForEdit: roomId);
   });
   
   static final Handler _citySelectionHandler = Handler(
