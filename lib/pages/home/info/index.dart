@@ -1,14 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:rent_share/pages/home/info/info_data.dart';
 import 'package:rent_share/pages/home/info/item_widget.dart';
+import 'package:rent_share/pages/utils/dio_http.dart'; // Import DioHttp
 
-class Info extends StatelessWidget {
+class Info extends StatefulWidget {
   final bool showTitle;
-  final List<InfoItem> dataList;
 
-  // 移除 const 并调用 getGeneratedInfoData()
-  Info({super.key, this.showTitle = false, List<InfoItem>? dataList})
-      : dataList = dataList ?? getGeneratedInfoData();
+  const Info({super.key, this.showTitle = false});
+
+  @override
+  State<Info> createState() => _InfoState();
+}
+
+class _InfoState extends State<Info> {
+  List<InfoItem> _infoList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNewsData();
+  }
+
+  Future<void> _fetchNewsData() async {
+    try {
+      final res = await DioHttp.of(context).get('/api/news');
+      if (res.data != null && res.data is List) {
+        List<InfoItem> newsItems = (res.data as List)
+            .map((item) => InfoItem(
+                  item['title'],
+                  item['imageUrl'],
+                  item['source'],
+                  item['time'], // Assuming 'time' is provided by backend
+                  item['navigateUrl'], // Assuming 'navigateUrl' is provided
+                ))
+            .toList();
+        setState(() {
+          _infoList = newsItems;
+        });
+      }
+    } catch (e) {
+      print('Error fetching news data: $e');
+      // Handle error, maybe show a message to the user
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +50,7 @@ class Info extends StatelessWidget {
       children: [
         Column(
           children: [
-            if (showTitle)
+            if (widget.showTitle)
               Container(
                 alignment: Alignment.centerLeft,
                 padding: const EdgeInsets.all(10),
@@ -27,15 +61,8 @@ class Info extends StatelessWidget {
                 ),
               ),
             Column(
-                children:
-                    dataList.map((item) => InfoItemWidget(data: item)).toList()
-                //     Container(
-                //       height: 100,
-                //       margin: const EdgeInsets.only(bottom: 10),
-                //       decoration: const BoxDecoration(color: Colors.red),
-                //     ))
-                // .toList()
-                )
+              children: _infoList.map((item) => InfoItemWidget(data: item)).toList(),
+            )
           ],
         )
       ],

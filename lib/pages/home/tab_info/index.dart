@@ -22,12 +22,9 @@ class _TabInfoState extends State<TabInfo> {
           },
         ),
       ),
-      body: ListView(children: [ // 移除 const
+      body: ListView(children: [
         SizedBox(height: 15),
-        Info(),
-        Info(),
-        Info(),
-        Info(),
+        Info(), // 只保留一个 Info() widget
       ]),
     );
   }
