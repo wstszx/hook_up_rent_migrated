@@ -40,6 +40,10 @@ class _RegisterPageState extends State<RegisterPage> {
       _showToast('密码不能为空');
       return;
     }
+    if (password.length < 6) {
+      _showToast('密码长度不能小于6位');
+      return;
+    }
     if (repeatPassword.isEmpty) {
       _showToast('请确认密码');
       return;
