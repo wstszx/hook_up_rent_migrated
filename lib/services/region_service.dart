@@ -238,5 +238,9 @@ class RegionService {
     print("RegionService: Coordinates not found for city '$cityNameFromModel'");
     return null; // City not found
   }
+
+  static RegionInfo? getRootRegion() {
+    return _rootRegion;
+  }
 }
 

@@ -1,73 +1,77 @@
 import '../models/house.dart';
 import 'dart:math';
+import 'region_service.dart';
+import 'dart:async';
 
 class HouseService {
-  final List<House> _mockHouses = [
-    House(
-      id: '1',
-      title: '现代简约两居室',
-      price: '3000/月',
-      area: '80平米',
-      community: '小区A',
-      latitude: 31.2304,
-      longitude: 121.4737,
-      imageUrl: 'static/images/home_index_recommend_1.png',
-    ),
-    House(
-      id: '2',
-      title: '市中心豪华公寓',
-      price: '8000/月',
-      area: '120平米',
-      community: '小区B',
-      latitude: 31.2354,
-      longitude: 121.4837,
-      imageUrl: 'static/images/home_index_recommend_2.png',
-    ),
-    House(
-      id: '3',
-      title: '近地铁温馨一居室',
-      price: '2500/月',
-      area: '50平米',
-      community: '小区C',
-      latitude: 31.2284,
-      longitude: 121.4687,
-      imageUrl: 'static/images/home_index_recommend_3.png',
-    ),
-     House(
-      id: '4',
-      title: '郊区独栋别墅',
-      price: '15000/月',
-      area: '200平米',
-      community: '小区D',
-      latitude: 31.3000,
-      longitude: 121.5000,
-      imageUrl: 'static/images/home_index_recommend_4.png',
-    ),
-  ];
+  static final Random _random = Random();
+  static List<House>? _mockHouses;
 
-  List<House> getMockHouses() {
-    return _mockHouses;
+  // 生成微小随机偏移
+  static double _randomOffset() {
+    // 约±0.01度，约1km内
+    return (_random.nextDouble() - 0.5) * 0.02;
   }
 
-  List<House> searchHouses(String keyword) {
-    if (keyword.isEmpty) {
-      return _mockHouses;
+  // 递归遍历所有城市和行政区，生成房源
+  static void _traverseAndGenerate(RegionInfo region, List<House> result, [int countPerRegion = 3]) {
+    if (region.level == 'city' || region.level == 'district') {
+      for (int i = 0; i < countPerRegion; i++) {
+        result.add(House(
+          id: '${region.name}_${i}_${_random.nextInt(100000)}',
+          title: '${region.name}优质房源${i+1}',
+          price: '${2000 + _random.nextInt(8000)}元/月',
+          area: '${50 + _random.nextInt(100)}平米',
+          community: '${region.name}小区${String.fromCharCode(65 + i)}',
+          latitude: region.latitude + _randomOffset(),
+          longitude: region.longitude + _randomOffset(),
+          imageUrl: 'static/images/home_index_recommend_${1 + _random.nextInt(4)}.png',
+        ));
+      }
     }
-    return _mockHouses.where((house) =>
+    for (var child in region.districts) {
+      _traverseAndGenerate(child, result, countPerRegion);
+    }
+  }
+
+  static Future<void> ensureMockHousesReady() async {
+    if (_mockHouses != null) return;
+    await RegionService.loadRegionData();
+    final root = RegionService.getRootRegion();
+    List<House> result = [];
+    if (root != null) {
+      for (var province in root.districts) {
+        _traverseAndGenerate(province, result);
+      }
+    }
+    _mockHouses = result;
+  }
+
+  Future<List<House>> getMockHouses() async {
+    await ensureMockHousesReady();
+    return _mockHouses ?? [];
+  }
+
+  Future<List<House>> searchHouses(String keyword) async {
+    await ensureMockHousesReady();
+    if (keyword.isEmpty) {
+      return _mockHouses ?? [];
+    }
+    return _mockHouses!.where((house) =>
         house.title.contains(keyword) || house.community.contains(keyword)).toList();
   }
 
-  // Simple distance calculation (Haversine formula is more accurate but this is sufficient for mock)
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    var p = 0.017453292519943295; // Math.PI / 180
+    var p = 0.017453292519943295;
     var a = 0.5 - cos((lat2 - lat1) * p) / 2 +
         cos(lat1 * p) * cos(lat2 * p) *
             (1 - cos((lon2 - lon1) * p)) / 2;
-    return 12742 * asin(sqrt(a)); // 2 * R; R = 6371 km
+    return 12742 * asin(sqrt(a));
   }
 
-  List<House> filterByDistance(double centerLat, double centerLon, double radiusKm) {
-    return _mockHouses.where((house) {
+  Future<List<House>> filterByDistance(double centerLat, double centerLon, double radiusKm) async {
+    await ensureMockHousesReady();
+    return _mockHouses!.where((house) {
       final distance = _calculateDistance(centerLat, centerLon, house.latitude, house.longitude);
       return distance <= radiusKm;
     }).toList();

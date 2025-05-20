@@ -100,7 +100,7 @@ class _MapHousePageState extends State<MapHousePage> {
   Future<void> _loadHouses() async {
     // In a real app, you would fetch data from an API based on the current map view
     // For this example, we'll use mock data and filter by distance from the current center
-    _houses = _houseService.filterByDistance(_currentCenterLat, _currentCenterLon, 10); // Filter within 10km
+    _houses = await _houseService.filterByDistance(_currentCenterLat, _currentCenterLon, 10); // Filter within 10km
     _updateMapMarkers(_houses);
   }
 
@@ -138,9 +138,9 @@ class _MapHousePageState extends State<MapHousePage> {
     }
   }
 
-  void _searchHouses(String keyword) {
+  Future<void> _searchHouses(String keyword) async {
     _currentSearchKeyword = keyword;
-    _houses = _houseService.searchHouses(keyword);
+    _houses = await _houseService.searchHouses(keyword);
     _updateMapMarkers(_houses);
   }
 
@@ -183,10 +183,10 @@ class _MapHousePageState extends State<MapHousePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () {
+            onPressed: () async {
               // Implement search functionality (e.g., show a search bar)
               // For simplicity, we'll just trigger a search with a fixed keyword here
-              _searchHouses('小区');
+              await _searchHouses('小区');
             },
           ),
         ],
