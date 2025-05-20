@@ -6,10 +6,10 @@ import 'package:flutter_swiper_null_safety/flutter_swiper_null_safety.dart';
 import 'package:rent_share/widgets/common_image.dart';
 
 const List<String> defaultImages = [
-  'https://images.unsplash.com/photo-1523217582562-09d0def993a6', // Modern house
+  'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // House with large windows
   'https://images.unsplash.com/photo-1501183638710-841dd1904471', // Interior with plants
   'https://images.unsplash.com/photo-1570129477492-45c003edd2be', // House with a pool
-  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914', // Luxury house
+  'https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80', // Modern house with garage
 ];
 
 var imageWidth = 424;
@@ -29,7 +29,7 @@ class CommonSwiper extends StatelessWidget {
         itemBuilder: (BuildContext context, int index) {
           return CommonImage(
             images[index],
-            fit: BoxFit.fill,
+            fit: BoxFit.cover,
           );
         },
         itemCount: images.length, // Use the actual length of the images list
