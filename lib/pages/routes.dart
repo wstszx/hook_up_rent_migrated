@@ -14,6 +14,7 @@ import 'package:rent_share/pages/home/info/news_detail_page.dart'; // 资讯详�
 import 'package:rent_share/pages/home/info/info_data.dart'; // 导入 InfoItem 类型
 import 'package:rent_share/pages/register.dart'; // 注册页
 import 'package:rent_share/pages/room_manage/index.dart'; // 房屋管理页
+import 'package:rent_share/pages/city_selection_page.dart'; // 城市选择页
 
 class Routes {
   // 定义路由名称
@@ -31,6 +32,7 @@ class Routes {
   static String register = 'register'; // 注册页
   static String roomManage = 'room_manage'; // 房屋管理页
   static String roomEdit = 'room_edit'; // 房屋编辑页
+  static String citySelection = 'city_selection'; // 城市选择页
  
   static void configureRoutes(FluroRouter router) {
     router.define(home, handler: _homeHandler);
@@ -54,6 +56,7 @@ class Routes {
     router.define(roomManage, handler: _roomManageHandler, transitionType: TransitionType.native);
     // Define room_edit/:id route to handle room editing with ID parameter
     router.define('$roomEdit/:id', handler: _roomEditHandler, transitionType: TransitionType.native);
+    router.define(citySelection, handler: _citySelectionHandler, transitionType: TransitionType.native);
   }
  
   // 定义路由处理函数
@@ -131,6 +134,11 @@ class Routes {
     // RoomEditPage will be created to handle room editing
     // It will reuse RoomAddPage with an id parameter
     return const RoomAddPage(isEdit: true);
+  });
+  
+  static final Handler _citySelectionHandler = Handler(
+      handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
+    return const CitySelectionPage();
   });
 }
 

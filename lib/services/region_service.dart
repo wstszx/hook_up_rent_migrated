@@ -200,5 +200,43 @@ class RegionService {
     // 如果仍然没有找到任何区域，返回默认的“不限”
     return result;
   }
+
+  // 根据城市名称获取经纬度
+  static Map<String, double>? getCoordinatesByCityName(String cityNameFromModel) {
+    if (_rootRegion == null) {
+      print("RegionService: _rootRegion is null. Call loadRegionData() first.");
+      return null;
+    }
+
+    // Iterate through provinces/municipalities in _rootRegion.districts
+    for (var provinceLevelRegion in _rootRegion!.districts) {
+      // Case 1: The provinceLevelRegion itself is the city we are looking for (this applies to municipalities)
+      // Example: cityNameFromModel is "北京市", provinceLevelRegion.name is "北京市"
+      if (provinceLevelRegion.name == cityNameFromModel) {
+        // Ensure it's a municipality or a city-level entity that has coordinates
+        // Municipalities like Beijing, Shanghai are 'province' level in region.json structure
+        // but act as cities.
+        if (provinceLevelRegion.level == 'province' && 
+            (provinceLevelRegion.name.endsWith('市') || 
+             ['北京', '上海', '天津', '重庆'].any((m) => provinceLevelRegion.name.startsWith(m)))) {
+          return {'latitude': provinceLevelRegion.latitude, 'longitude': provinceLevelRegion.longitude};
+        }
+      }
+
+      // Case 2: The city is within a province
+      // Example: cityNameFromModel is "杭州市", provinceLevelRegion.name is "浙江省"
+      // We need to iterate through provinceLevelRegion.districts (which are cities)
+      if (provinceLevelRegion.districts.isNotEmpty) {
+        for (var cityLevelRegion in provinceLevelRegion.districts) {
+          if (cityLevelRegion.name == cityNameFromModel && cityLevelRegion.level == 'city') {
+            return {'latitude': cityLevelRegion.latitude, 'longitude': cityLevelRegion.longitude};
+          }
+        }
+      }
+    }
+
+    print("RegionService: Coordinates not found for city '$cityNameFromModel'");
+    return null; // City not found
+  }
 }
 

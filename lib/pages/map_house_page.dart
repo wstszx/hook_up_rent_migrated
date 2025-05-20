@@ -5,6 +5,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/house.dart';
 import '../services/house_service.dart';
+import '../scoped_model/city.dart';
+import '../services/region_service.dart'; // Added import for RegionService
+import '../pages/utils/scoped_model_helper.dart';
 
 class MapHousePage extends StatefulWidget {
   const MapHousePage({Key? key}) : super(key: key);
@@ -143,9 +146,40 @@ class _MapHousePageState extends State<MapHousePage> {
 
   @override
   Widget build(BuildContext context) {
+    final cityModel = ScopedModelHelper.getModel<CityModel>(context);
+    final cityName = cityModel.cityNameOrDefault;
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('地图找房'),
+        title: GestureDetector(
+          onTap: () async { // Mark onTap as async
+            await Navigator.pushNamed(context, 'city_selection');
+            // 当用户从城市选择页面返回时，刷新地图
+            final newCity = ScopedModelHelper.getModel<CityModel>(context).city;
+            if (newCity != null) {
+              // 尝试从RegionService获取城市坐标
+              final coordinates = RegionService.getCoordinatesByCityName(newCity.name);
+              if (coordinates != null) {
+                _currentCenterLat = coordinates['latitude']!;
+                _currentCenterLon = coordinates['longitude']!;
+                _setMapCenter(_currentCenterLon, _currentCenterLat);
+                _loadHouses(); // 重新加载该区域的房源
+              } else {
+                // 如果获取不到坐标，可以给用户提示或使用默认值
+                debugPrint('Could not find coordinates for city: ${newCity.name}');
+                // Optionally, fall back to a default or previous location
+                // For now, we'll just log and not change the map if coords are missing
+              }
+            }
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(cityName),
+              const Icon(Icons.arrow_drop_down),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),

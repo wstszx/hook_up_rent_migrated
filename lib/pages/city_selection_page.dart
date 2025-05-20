@@ -124,9 +124,9 @@ class _CitySelectionPageState extends State<CitySelectionPage> {
                     return ListTile(
                       title: Text(city.name),
                       onTap: () {
-                        // Optionally, update CityModel here if needed immediately
-                        // ScopedModelHelper.getModel<CityModel>(context).city = city;
-                        Navigator.pop(context, city); // Return the selected city
+                        // 更新城市模型
+                        ScopedModelHelper.getModel<CityModel>(context).city = city;
+                        Navigator.pop(context, city); // 返回选择的城市
                       },
                     );
                   },
