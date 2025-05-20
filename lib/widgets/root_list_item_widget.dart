@@ -12,7 +12,13 @@ class RoomListItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
-      onTap: () => Navigator.pushNamed(context, 'room_detail', arguments: data),
+      onTap: () {
+        // 导航到房源详情页，并传递房源ID
+        Navigator.pushNamed(
+          context,
+          '/room/${data.id}', // 使用正确的路由名称和参数格式
+        );
+      },
       child: Container(
         padding: const EdgeInsets.only(left: 10, right: 10, bottom: 10),
         child: Row(
