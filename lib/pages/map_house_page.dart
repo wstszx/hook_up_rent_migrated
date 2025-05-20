@@ -98,9 +98,23 @@ class _MapHousePageState extends State<MapHousePage> {
   }
 
   Future<void> _loadHouses() async {
-    // In a real app, you would fetch data from an API based on the current map view
-    // For this example, we'll use mock data and filter by distance from the current center
-    _houses = await _houseService.filterByDistance(_currentCenterLat, _currentCenterLon, 10); // Filter within 10km
+    final cityModel = ScopedModelHelper.getModel<CityModel>(context);
+    final cityName = cityModel.cityNameOrDefault;
+    
+    // 根据当前城市和地图中心点获取房源数据
+    _houses = await _houseService.filterByDistanceAndCity(
+      _currentCenterLat,
+      _currentCenterLon,
+      10, // 10km范围内
+      cityName, // 添加城市名称作为过滤条件
+    );
+    
+    debugPrint('切换城市位置 - 纬度: $_currentCenterLat, 经度: $_currentCenterLon');
+    debugPrint('当前城市: $cityName');
+    debugPrint('获取到的房源数量: ${_houses.length}');
+    for (var house in _houses) {
+      debugPrint('房源信息 - 标题: ${house.title}, 价格: ${house.price}, 地址: ${house.community}');
+    }
     _updateMapMarkers(_houses);
   }
 
@@ -128,10 +142,8 @@ class _MapHousePageState extends State<MapHousePage> {
         break;
       case 'markerClick':
         final String houseId = data['houseId'];
-        // Navigate to house detail page or show info window
-        debugPrint('Marker clicked for house ID: $houseId');
-        // Example: Navigate to detail page (assuming a route exists)
-        // Navigator.pushNamed(context, '/room/${houseId}');
+        // 导航到房源详情页面
+        Navigator.pushNamed(context, '/room/$houseId');
         break;
       default:
         debugPrint('Unknown message type: $type');

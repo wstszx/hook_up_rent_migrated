@@ -23,7 +23,7 @@ class Routes {
   static String search = '/search'; // Fluro define path
   static String map = '/map'; // Fluro define path
   static String roomAdd = '/room-add'; // Fluro define path
-  static String roomDetail = 'room_detail'; // Route name for Navigator.pushNamed and Fluro define path
+  static String roomDetail = '/room/:id'; // 修改为动态路由格式，用于处理房源ID参数
   static String roomFavorite = 'room_favorite'; // 我的收藏页
   static String myOrders = 'my_orders'; // 我的预约页
   static String profileEdit = 'profile_edit'; // 个人资料编辑页
@@ -46,7 +46,7 @@ class Routes {
     router.define(search, handler: _searchHandler); // Existing uses /search
     router.define(map, handler: _mapHandler); // Existing uses /map
     router.define(roomAdd, handler: _roomAddHandler); // Existing uses /room-add
-    router.define(roomDetail, handler: _roomDetailHandler, transitionType: TransitionType.native);
+    router.define(roomDetail, handler: _roomDetailHandler, transitionType: TransitionType.native); // 定义带参数的房源详情路由
     router.define(roomFavorite, handler: _roomFavoriteHandler, transitionType: TransitionType.native);
     router.define(myOrders, handler: _myOrdersHandler, transitionType: TransitionType.native);
     router.define(profileEdit, handler: _profileEditHandler, transitionType: TransitionType.native);
@@ -86,8 +86,11 @@ class Routes {
 
   static final Handler _roomDetailHandler = Handler(
       handlerFunc: (BuildContext? context, Map<String, List<String>> params) {
-    // RoomDetailPage expects arguments via ModalRoute.of(context)?.settings.arguments
-    return const RoomDetailPage();
+    // 从路由参数中获取房源ID
+    final String? houseId = params['id']?.first;
+    if (houseId == null) return const RoomDetailPage();
+    // 将房源ID作为参数传递给RoomDetailPage
+    return RoomDetailPage(houseId: houseId);
   });
  
   static final Handler _roomFavoriteHandler = Handler(

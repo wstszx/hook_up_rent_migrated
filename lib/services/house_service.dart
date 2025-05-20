@@ -1,64 +1,58 @@
 import '../models/house.dart';
-import 'dart:math';
-import 'region_service.dart';
 import 'dart:async';
+import 'package:dio/dio.dart';
+import '../config.dart';
+import 'dart:math';
 
 class HouseService {
-  static final Random _random = Random();
-  static List<House>? _mockHouses;
+  final Dio _dio = Dio(BaseOptions(baseUrl: Config.BaseUrl));
 
-  // 生成微小随机偏移
-  static double _randomOffset() {
-    // 约±0.01度，约1km内
-    return (_random.nextDouble() - 0.5) * 0.02;
-  }
-
-  // 递归遍历所有城市和行政区，生成房源
-  static void _traverseAndGenerate(RegionInfo region, List<House> result, [int countPerRegion = 3]) {
-    if (region.level == 'city' || region.level == 'district') {
-      for (int i = 0; i < countPerRegion; i++) {
-        result.add(House(
-          id: '${region.name}_${i}_${_random.nextInt(100000)}',
-          title: '${region.name}优质房源${i+1}',
-          price: '${2000 + _random.nextInt(8000)}元/月',
-          area: '${50 + _random.nextInt(100)}平米',
-          community: '${region.name}小区${String.fromCharCode(65 + i)}',
-          latitude: region.latitude + _randomOffset(),
-          longitude: region.longitude + _randomOffset(),
-          imageUrl: 'static/images/home_index_recommend_${1 + _random.nextInt(4)}.png',
-        ));
+  Future<List<House>> getHouses() async {
+    try {
+      final response = await _dio.get('/api/rooms');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['rooms'];
+        return data.map((json) => House(
+          id: json['_id'],
+          title: json['title'],
+          price: '${json['price']}元/月',
+          area: json['area'] ?? '暂无数据',
+          community: json['address'] ?? json['district'] ?? '',
+          latitude: json['location']?['coordinates']?[1] ?? 0.0,
+          longitude: json['location']?['coordinates']?[0] ?? 0.0,
+          imageUrl: json['images']?.isNotEmpty == true ? json['images'][0] : 'static/images/home_index_recommend_1.png',
+        )).toList();
       }
+      return [];
+    } catch (e) {
+      print('获取房源列表失败: $e');
+      return [];
     }
-    for (var child in region.districts) {
-      _traverseAndGenerate(child, result, countPerRegion);
-    }
-  }
-
-  static Future<void> ensureMockHousesReady() async {
-    if (_mockHouses != null) return;
-    await RegionService.loadRegionData();
-    final root = RegionService.getRootRegion();
-    List<House> result = [];
-    if (root != null) {
-      for (var province in root.districts) {
-        _traverseAndGenerate(province, result);
-      }
-    }
-    _mockHouses = result;
-  }
-
-  Future<List<House>> getMockHouses() async {
-    await ensureMockHousesReady();
-    return _mockHouses ?? [];
   }
 
   Future<List<House>> searchHouses(String keyword) async {
-    await ensureMockHousesReady();
-    if (keyword.isEmpty) {
-      return _mockHouses ?? [];
+    try {
+      final response = await _dio.get('/api/rooms', queryParameters: {
+        'keyword': keyword,
+      });
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['rooms'];
+        return data.map((json) => House(
+          id: json['_id'],
+          title: json['title'],
+          price: '${json['price']}元/月',
+          area: json['area'] ?? '暂无数据',
+          community: json['address'] ?? json['district'] ?? '',
+          latitude: json['location']?['coordinates']?[1] ?? 0.0,
+          longitude: json['location']?['coordinates']?[0] ?? 0.0,
+          imageUrl: json['images']?.isNotEmpty == true ? json['images'][0] : 'static/images/home_index_recommend_1.png',
+        )).toList();
+      }
+      return [];
+    } catch (e) {
+      print('搜索房源失败: $e');
+      return [];
     }
-    return _mockHouses!.where((house) =>
-        house.title.contains(keyword) || house.community.contains(keyword)).toList();
   }
 
   double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
@@ -66,14 +60,35 @@ class HouseService {
     var a = 0.5 - cos((lat2 - lat1) * p) / 2 +
         cos(lat1 * p) * cos(lat2 * p) *
             (1 - cos((lon2 - lon1) * p)) / 2;
-    return 12742 * asin(sqrt(a));
+    return 12742 * asin(sqrt(a)).toDouble();
   }
 
-  Future<List<House>> filterByDistance(double centerLat, double centerLon, double radiusKm) async {
-    await ensureMockHousesReady();
-    return _mockHouses!.where((house) {
-      final distance = _calculateDistance(centerLat, centerLon, house.latitude, house.longitude);
-      return distance <= radiusKm;
-    }).toList();
+  Future<List<House>> filterByDistanceAndCity(double centerLat, double centerLon, double radiusKm, String cityName) async {
+    try {
+      final response = await _dio.get('/api/rooms', queryParameters: {
+        'city': cityName,
+        'latitude': centerLat,
+        'longitude': centerLon,
+        'radius': radiusKm
+      });
+      
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data['rooms'];
+        return data.map((json) => House(
+          id: json['_id'],
+          title: json['title'],
+          price: '${json['price']}元/月',
+          area: json['area'] ?? '暂无数据',
+          community: json['address'] ?? json['district'] ?? '',
+          latitude: json['location']?['coordinates']?[1] ?? 0.0,
+          longitude: json['location']?['coordinates']?[0] ?? 0.0,
+          imageUrl: json['images']?.isNotEmpty == true ? json['images'][0] : 'static/images/home_index_recommend_1.png',
+        )).toList();
+      }
+      return [];
+    } catch (e) {
+      print('按城市和距离获取房源失败: $e');
+      return [];
+    }
   }
 }

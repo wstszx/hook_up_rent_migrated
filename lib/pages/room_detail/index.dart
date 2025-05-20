@@ -13,7 +13,8 @@ import 'package:rent_share/pages/utils/scoped_model_helper.dart';
 import 'package:rent_share/pages/utils/common_toast.dart';
 
 class RoomDetailPage extends StatefulWidget {
-  const RoomDetailPage({Key? key}) : super(key: key);
+  final String? houseId;
+  const RoomDetailPage({Key? key, this.houseId}) : super(key: key);
 
   @override
   State<RoomDetailPage> createState() => _RoomDetailPageState();
@@ -22,44 +23,75 @@ class RoomDetailPage extends StatefulWidget {
 var bottomButtonTextStyle = const TextStyle(color: Colors.white, fontSize: 18);
 
 class _RoomDetailPageState extends State<RoomDetailPage> {
-  bool isLike = false; // 是否收藏
-  bool _isLoadingFavoriteStatus = true; // 加载收藏状态
-  bool showAllText = false; // 是否展开
+  bool isLike = false;
+  bool _isLoadingFavoriteStatus = true;
+  bool showAllText = false;
   late RoomListItemData item;
-  bool _isItemInitialized = false; // 标记 item 是否已初始化
+  bool _isItemInitialized = false;
+
+  Future<void> _loadHouseData(String houseId) async {
+    try {
+      final response = await DioHttp.of(context).get(
+        '${Config.BaseUrl}api/rooms/$houseId',
+        null,
+        null,
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final roomData = response.data;
+        setState(() {
+          item = RoomListItemData(
+            id: roomData['_id'] ?? '',
+            title: roomData['title'] ?? '',
+            subTitle: '${roomData['district'] ?? ''} ${roomData['roomType'] ?? ''}',
+            imageUrl: roomData['images']?.isNotEmpty == true ? roomData['images'][0] : '',
+            price: (roomData['price'] as num?)?.toInt() ?? 0,
+            tags: roomData['tags']?.cast<String>() ?? [],
+          );
+          _isItemInitialized = true;
+          _checkFavoriteStatus();
+        });
+      }
+    } catch (e) {
+      print('加载房源数据失败: $e');
+      if (mounted) {
+        setState(() {
+          _isItemInitialized = false;
+          _isLoadingFavoriteStatus = false;
+        });
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final arguments = ModalRoute.of(context)?.settings.arguments;
-      if (arguments != null && arguments is RoomListItemData) {
-        item = arguments;
-        _isItemInitialized = true; // 标记 item 已初始化
-        _checkFavoriteStatus();
-        if (mounted) {
-          setState(() {}); // 触发重建以使用 item
-        }
-      } else {
-        // 处理参数错误或缺失的情况
-        if (mounted) {
+    if (widget.houseId != null) {
+      _loadHouseData(widget.houseId!);
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final arguments = ModalRoute.of(context)?.settings.arguments;
+        if (arguments != null && arguments is RoomListItemData) {
           setState(() {
-            _isItemInitialized = false; // 标记 item 未成功初始化
-            _isLoadingFavoriteStatus = false; // 也停止加载收藏状态
+            item = arguments;
+            _isItemInitialized = true;
+            _checkFavoriteStatus();
           });
+        } else {
+          setState(() {
+            _isItemInitialized = false;
+            _isLoadingFavoriteStatus = false;
+          });
+          print("Error: RoomListItemData not passed as argument or argument is null.");
         }
-        print("Error: RoomListItemData not passed as argument or argument is null.");
-        // Optionally, navigate back or show an error message
-      }
-    });
+      });
+    }
   }
 
   Future<void> _checkFavoriteStatus() async {
-    if (!_isItemInitialized) return; // 如果 item 未初始化，则不执行
+    if (!_isItemInitialized) return;
 
     final auth = ScopedModelHelper.getModel<AuthModel>(context);
-    // item.id can be null if RoomListItemData allows it, ensure to handle
-    if (!auth.isLogin || item.id.isEmpty) { // Assuming id is String and checking for empty
+    if (!auth.isLogin || item.id.isEmpty) {
       if (mounted) {
         setState(() {
           isLike = false;
@@ -68,13 +100,13 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       }
       return;
     }
+
     try {
-      // 使用 DioHttp.of(context).get
-      final String? token = auth.token; // Get token from AuthModel
+      final String? token = auth.token;
       final response = await DioHttp.of(context).get(
         '${Config.BaseUrl}api/me/favorites',
-        null, // params
-        token, // Pass token
+        null,
+        token,
       );
       if (response.statusCode == 200 && response.data != null) {
         List<dynamic> favorites = response.data as List<dynamic>;
@@ -102,7 +134,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
   }
 
   Future<void> _toggleFavorite() async {
-    if (!_isItemInitialized) return; // 如果 item 未初始化，则不执行
+    if (!_isItemInitialized) return;
 
     final auth = ScopedModelHelper.getModel<AuthModel>(context);
     if (!auth.isLogin) {
@@ -110,19 +142,18 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       return;
     }
 
-    if (item.id.isEmpty) { // Assuming id is String and checking for empty
+    if (item.id.isEmpty) {
       CommonToast.showToast('无效的房源ID');
       return;
     }
 
     try {
-      if (isLike) { // Currently liked, so unlike
-        // 使用 DioHttp.of(context).delete
-        final String? token = auth.token; // Get token
+      final String? token = auth.token;
+      if (isLike) {
         final response = await DioHttp.of(context).delete(
           '${Config.BaseUrl}api/me/favorites/${item.id}',
-          null, // params
-          token, // Pass token
+          null,
+          token,
         );
         if (response.statusCode == 200) {
           if (mounted) {
@@ -134,13 +165,11 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         } else {
           CommonToast.showToast('取消收藏失败: ${response.data?['message'] ?? '请稍后再试'}');
         }
-      } else { // Currently not liked, so like
-        // 使用 DioHttp.of(context).post
-        final String? token = auth.token; // Get token
+      } else {
         final response = await DioHttp.of(context).post(
           '${Config.BaseUrl}api/me/favorites',
           data: {'roomId': item.id},
-          token: token, // Pass token
+          token: token,
         );
         if (response.statusCode == 201) {
           if (mounted) {
@@ -158,41 +187,33 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       print("Error toggling favorite: $e");
     }
   }
- 
+
   Future<void> _makeAppointment() async {
     if (!_isItemInitialized) return;
- 
+
     final auth = ScopedModelHelper.getModel<AuthModel>(context);
     if (!auth.isLogin) {
       Navigator.of(context).pushNamed('login');
       return;
     }
- 
+
     if (item.id.isEmpty) {
       CommonToast.showToast('无效的房源ID');
       return;
     }
- 
-    // 可选：允许用户输入预约时间或备注
-    // final DateTime? appointmentTime = await showDatePicker(...);
-    // final String? notes = await showDialog(...); // 获取备注
- 
+
     try {
       final String? token = auth.token;
       final response = await DioHttp.of(context).post(
         '${Config.BaseUrl}api/me/orders',
         data: {
           'roomId': item.id,
-          // 'appointmentTime': appointmentTime?.toIso8601String(), // 如果有选择时间
-          // 'notes': notes, // 如果有备注
         },
         token: token,
       );
- 
+
       if (response.statusCode == 201) {
         CommonToast.showToast('预约成功，已添加到我的预约');
-        // 可选：跳转到我的预约页面
-        // Navigator.of(context).pushNamed(Routes.myOrders);
       } else {
         CommonToast.showToast('预约失败: ${response.data?['message'] ?? '请稍后再试'}');
       }
@@ -201,14 +222,13 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
       print("Error making appointment: $e");
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     if (!_isItemInitialized) {
-      // 如果 item 未初始化 (例如，路由参数问题或 initState 回调尚未完成)
       return Scaffold(
         appBar: AppBar(title: const Text("房源详情")),
-        body: const Center(child: CircularProgressIndicator()), // 显示加载指示器
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -219,7 +239,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
         title: Text(item.title),
         actions: [
           IconButton(
-            onPressed: () => Share.share('https://www.baidu.com'), // 示例分享链接
+            onPressed: () => Share.share('https://www.baidu.com'),
             icon: const Icon(Icons.share),
           )
         ],
@@ -256,18 +276,18 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
               const Divider(color: Colors.grey, indent: 10, endIndent: 10),
               Container(
                 margin: const EdgeInsets.only(left: 10, right: 10, top: 6),
-                child: Wrap(
+                child: const Wrap(
                   runSpacing: 10,
                   children: [
-                    const BaseInfoItem('面积：暂无数据'),
-                    const BaseInfoItem('楼层：详见描述'),
-                    const BaseInfoItem('户型：详见描述'),
-                    const BaseInfoItem('装修：精装'),
+                    BaseInfoItem('面积：暂无数据'),
+                    BaseInfoItem('楼层：详见描述'),
+                    BaseInfoItem('户型：详见描述'),
+                    BaseInfoItem('装修：精装'),
                   ],
                 ),
               ),
               const CommonTitle('房屋配置'),
-              RoomApplicanceList(const []), // 假设没有 appliance 数据
+              RoomApplicanceList(const []),
               const CommonTitle('房屋概况'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -294,12 +314,13 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                         else
                           Container(),
                         TextButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('举报功能暂未实现')),
-                              );
-                            },
-                            child: const Text('举报')),
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('举报功能暂未实现')),
+                            );
+                          },
+                          child: const Text('举报'),
+                        ),
                       ],
                     )
                   ],
@@ -307,7 +328,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
               ),
               const CommonTitle('猜你喜欢'),
               Info(),
-              const SizedBox(height: 100), // 为底部按钮留出空间
+              const SizedBox(height: 100),
             ],
           ),
           Positioned(
@@ -316,14 +337,13 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
             bottom: 0,
             child: Container(
               color: Colors.grey[200],
-              padding: const EdgeInsets.all(10), // 统一内边距
+              padding: const EdgeInsets.all(10),
               child: Row(
                 children: [
                   GestureDetector(
-                     onTap: _isLoadingFavoriteStatus ? null : _toggleFavorite,
+                    onTap: _isLoadingFavoriteStatus ? null : _toggleFavorite,
                     child: Container(
-                      // Removed fixed width to allow flexibility or define it if necessary
-                      padding: const EdgeInsets.symmetric(horizontal: 10), // Add padding for tap area
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -338,7 +358,7 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                                   color: isLike ? Colors.green : Colors.black,
                                   size: 24,
                                 ),
-                          const SizedBox(height: 4), // Spacing
+                          const SizedBox(height: 4),
                           Text(
                             isLike ? '已收藏' : '收藏',
                             style: const TextStyle(fontSize: 12),
@@ -347,18 +367,18 @@ class _RoomDetailPageState extends State<RoomDetailPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10), // Spacing between buttons
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: ElevatedButton( // Using ElevatedButton for better semantics and styling
-                      onPressed: () => Navigator.pushNamed(context, 'test'), // Placeholder
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pushNamed(context, 'test'),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan),
                       child: Text('联系房东', style: bottomButtonTextStyle),
                     ),
                   ),
-                  const SizedBox(width: 10), // Spacing
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: ElevatedButton( // Using ElevatedButton
-                      onPressed: _makeAppointment, // 调用新的预约方法
+                    child: ElevatedButton(
+                      onPressed: _makeAppointment,
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                       child: Text('预约看房', style: bottomButtonTextStyle),
                     ),
@@ -381,7 +401,7 @@ class BaseInfoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: (MediaQuery.of(context).size.width - 3 * 10) / 2, // Adjust width calculation if padding changes
+      width: (MediaQuery.of(context).size.width - 3 * 10) / 2,
       child: Text(content),
     );
   }

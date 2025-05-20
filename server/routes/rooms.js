@@ -224,20 +224,31 @@ router.get('/', async (req, res) => {
             const dist = maxDistance ? parseFloat(maxDistance) : 2000; // 默认2公里
 
             if (!isNaN(lon) && !isNaN(lat)) {
+                // 使用 $geoWithin 和 $centerSphere 查找指定半径内的房源
+                // $centerSphere 需要半径单位为弧度，地球平均半径约为 6371 公里 或 6371000 米
+                const earthRadiusInMeters = 6371000;
+                const radiusInRadians = dist / earthRadiusInMeters; // 将距离（米）转换为弧度
+
                 queryConditions.location = {
-                    $nearSphere: {
-                        $geometry: {
-                            type: "Point",
-                            coordinates: [lon, lat]
-                        },
-                        $maxDistance: dist // 单位：米
+                    $geoWithin: {
+                        $centerSphere: [
+                            [lon, lat], // 中心点 [经度, 纬度]
+                            radiusInRadians // 半径（弧度）
+                        ]
                     }
                 };
+                console.log(`[Backend /api/rooms] Geospatial query: finding within ${dist} meters of [${lon}, ${lat}]`);
+            } else {
+                console.warn('[Backend /api/rooms] Received invalid longitude/latitude for geospatial query:', longitude, latitude);
             }
+        } else {
+             console.log('[Backend /api/rooms] No longitude/latitude provided for geospatial query.');
         }
 
 
         // 其他筛选条件
+        // 如果已经进行了地理位置查询，通常不需要再按城市过滤，除非是希望在某个城市范围内进行地理位置搜索
+        // 目前的逻辑是如果提供了地理位置，就优先使用地理位置过滤，否则使用城市过滤
         if (city && city.toLowerCase() !== '不限' && !queryConditions.location) {
             let cityRegex;
             // 如果城市名以“市”结尾，尝试匹配去掉“市”字后的名称
