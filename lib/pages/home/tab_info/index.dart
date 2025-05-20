@@ -18,7 +18,8 @@ class _TabInfoState extends State<TabInfo> {
         title: custom.SearchBar(
           inputValue: '',
           onSearch: () {
-            Navigator.of(context).pushNamed('search');
+            // TODO: 修改为资讯搜索页的路由
+            Navigator.of(context).pushNamed('infoSearch');
           },
         ),
       ),
