@@ -88,14 +88,13 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     } catch (e) {
       print('Registration Error Details: $e'); // Print the full error object
-      if (e is DioException) { // Check if it's a DioException for more details
-        print('DioException Response: ${e.response}');
-        print('DioException Type: ${e.type}');
-        print('DioException Message: ${e.message}');
-        // e.error might be the underlying error (e.g., SocketException)
-        print('DioException Underlying Error: ${e.error}');
+      String errorMessage = '注册请求失败，请稍后重试';
+      if (e is DioException && e.response != null && e.response!.data != null && e.response!.data['message'] != null) {
+         errorMessage = e.response!.data['message'];
+      } else if (e is DioException) {
+         errorMessage = '注册请求失败: ${e.message}';
       }
-      _showToast('注册请求失败，详情请查看控制台'); // Update toast message
+      _showToast(errorMessage);
     }
     // if (response.statusCode == 200) {
     //   if (response.data['code'] == 200) {
@@ -160,5 +159,12 @@ class _RegisterPageState extends State<RegisterPage> {
       ),
     );
   }
-}
 
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    repeatPasswordController.dispose();
+    super.dispose();
+  }
+}
