@@ -80,8 +80,11 @@ class _RoomAddPageState extends State<RoomAddPage> {
       // Fetch single room data using GET request
       final response = await dioHttp.get('/api/rooms/$id', null, token);
 
-      final data = response.data['data'];
-      if (data != null) {
+      // Correctly access the room data directly from response.data
+      final data = response.data;
+      print('Loaded room data: $data'); // Add this line to print the data
+      // Check if data is a Map and not null before proceeding
+      if (data != null && data is Map<String, dynamic>) {
         // Set form values from loaded data
         setState(() {
           titleController.text = data['title'] ?? '';
