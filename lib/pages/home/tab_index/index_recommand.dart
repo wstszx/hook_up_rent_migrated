@@ -4,7 +4,8 @@ import 'package:rent_share/pages/home/tab_index/index_recommand_item.dart';
 import 'package:rent_share/pages/utils/dio_http.dart';
 import 'package:rent_share/scoped_model/city.dart';
 import 'package:rent_share/pages/utils/scoped_model_helper.dart';
-import 'package:dio/dio.dart'; // Import Dio for Response type if needed
+import 'package:dio/dio.dart';
+import 'package:rent_share/pages/home/tab_search/data_list.dart';
 
 class IndexRecommand extends StatefulWidget {
   const IndexRecommand({super.key});
@@ -60,35 +61,43 @@ class _IndexRecommandState extends State<IndexRecommand> {
     }
 
     try {
-      Map<String, dynamic> params = {'city': cityName};
-      print('[Frontend] Fetching recommendations with params: $params');
+      // Fetch all rooms for the current city
+      Map<String, dynamic> params = {'city': cityName}; // Use city name as parameter
+      print('[Frontend] Fetching rooms with params: $params');
 
-      final response = await DioHttp.of(context).get('/api/recommendations', params);
-      print('[Frontend] Received response from /api/recommendations. Status: ${response.statusCode}');
+      final response = await DioHttp.of(context).get('/api/rooms', params); // Call /api/rooms
+      print('[Frontend] Received response from /api/rooms. Status: ${response.statusCode}');
 
       if (response.statusCode == 200 && response.data != null) {
         print('[Frontend] Response data: ${response.data}');
-        // Assuming response.data is List<dynamic> where each element is Map<String, dynamic>
-        final List<dynamic> dataList = response.data as List<dynamic>;
-        print('[Frontend] Parsed dataList length: ${dataList.length}');
-        final List<IndexRecommendItem> fetchedItems = dataList.map((item) {
-          // Basic type checking before creating the item
-          if (item is Map<String, dynamic> &&
-              item['title'] is String &&
-              item['subTitle'] is String &&
-              item['imageUrl'] is String &&
-              item['navigateUrl'] is String) {
+        // Assuming response.data['rooms'] is a list of room objects
+        final List<dynamic> roomList = response.data['rooms'] as List<dynamic>;
+        print('[Frontend] Parsed roomList length: ${roomList.length}');
+
+        // Shuffle and take up to 4 random rooms
+        roomList.shuffle();
+        final List<dynamic> selectedRooms = roomList.take(4).toList();
+
+        final List<IndexRecommendItem> fetchedItems = selectedRooms.map((room) {
+          // Map room data to IndexRecommendItem format
+          // Assuming room object has 'title', 'price', 'imageUrl', '_id'
+          if (room is Map<String, dynamic> &&
+              room['title'] is String &&
+              room['price'] != null && // Price can be int or double
+              room['images'] is List && // Check if images is a list
+              room['_id'] is String) {
+             String imageUrl = '';
+            if ((room['images'] as List).isNotEmpty) {
+              imageUrl = (room['images'] as List)[0] as String; // Use the first image
+            }
             return IndexRecommendItem(
-              item['title'],
-              item['subTitle'],
-              // Prepend base URL if imageUrl is relative, otherwise use as is
-              // Assuming imageUrl from backend might be relative or absolute
-              _resolveImageUrl(item['imageUrl']),
-              item['navigateUrl'],
+              room['title'], // Use room title
+              '${room['price']}元/月', // Use room price as subtitle
+              _resolveImageUrl(imageUrl), // Use room image URL
+              '/room/${room['_id']}', // Navigate to room detail page using room ID
             );
           } else {
-            print('Warning: Received invalid recommendation item format: $item');
-            // Return a placeholder or skip? Let's skip for now by returning null
+            print('Warning: Received invalid room item format: $room');
             return null;
           }
         }).whereType<IndexRecommendItem>().toList(); // Filter out any nulls
@@ -101,14 +110,14 @@ class _IndexRecommandState extends State<IndexRecommand> {
           });
         }
       } else {
-        throw Exception('Failed to load recommendations: Status code ${response.statusCode}');
+        throw Exception('Failed to load rooms: Status code ${response.statusCode}');
       }
     } catch (e, stacktrace) {
-      print('Error fetching recommendations: $e\n$stacktrace');
+      print('Error fetching rooms: $e\n$stacktrace');
       if (mounted) { // Check if the widget is still in the tree
         setState(() {
           _isLoading = false;
-          _error = '获取推荐数据失败';
+          _error = '获取房源数据失败';
         });
       }
     }
