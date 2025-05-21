@@ -91,7 +91,28 @@ class _RoomAddPageState extends State<RoomAddPage> {
           descController.text = data['description'] ?? '';
           communityController.text = data['address'] ?? '';
           priceController.text = data['price']?.toString() ?? '';
-          sizeController.text = data['size']?.toString() ?? '';
+          // Extract size from tags
+          final tags = data['tags'] as List?;
+          if (tags != null) {
+            final sizeTag = tags.firstWhere(
+                (tag) => tag.endsWith('平方米'),
+                orElse: () => null);
+            if (sizeTag != null) {
+              // Extract the number part before "平方米"
+              final sizeMatch = RegExp(r'(\d+)\s*平方米').firstMatch(sizeTag);
+              if (sizeMatch != null && sizeMatch.groupCount > 0) {
+                sizeController.text = sizeMatch.group(1) ?? '';
+              }
+            }
+
+            // Set decoration type from tags
+            decorationType = tags.contains('精装') ? 0 : 1;
+
+            // Set appliances from tags
+            _selectedAppliances = tags.where((tag) =>
+                !['精装', '简装'].contains(tag) && !tag.endsWith('平方米')).cast<String>().toList(); // Exclude size tag
+          }
+
 
           // Set city and district
           _selectedCityName = data['city'];
@@ -113,15 +134,6 @@ class _RoomAddPageState extends State<RoomAddPage> {
               .firstWhere((item) => item.name == data['oriented'],
                   orElse: () => filter_data.orientedList.first).id;
 
-          // Set decoration type from tags if available
-          final tags = data['tags'] as List?;
-          if (tags != null) {
-            decorationType = tags.contains('精装') ? 0 : 1;
-
-            // Set appliances from tags
-            _selectedAppliances = tags.where((tag) =>
-                !['精装', '简装'].contains(tag)).cast<String>().toList();
-          }
 
           // Set images if available (Note: We can't directly set _pickedImages with remote URLs)
           // You might need a different approach to display existing images,
