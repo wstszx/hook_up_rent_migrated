@@ -83,7 +83,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         }
       } catch (e) {
         print('[ProfileEdit] Error updating profile: $e');
-        CommonToast.showToast('个人资料更新失败，请稍后重试');
+        String errorMessage = '个人资料更新失败，请稍后重试';
+        if (e is DioException && e.response != null && e.response!.data != null && e.response!.data['message'] != null) {
+           errorMessage = e.response!.data['message'];
+        } else if (e is DioException) {
+           errorMessage = '个人资料更新失败: ${e.message}';
+        }
+        CommonToast.showToast(errorMessage);
       }
     }
   }
