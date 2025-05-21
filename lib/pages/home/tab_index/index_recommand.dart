@@ -175,10 +175,6 @@ class _IndexRecommandState extends State<IndexRecommand> {
                   style: TextStyle(
                       color: Colors.black, fontWeight: FontWeight.w600),
                 ),
-                Text(
-                  '更多',
-                  style: TextStyle(color: Colors.black54),
-                )
               ]),
           const SizedBox(height: 10),
           content, // Display loading, error, empty, or data
