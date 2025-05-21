@@ -23,6 +23,7 @@ class FilterBar extends StatefulWidget {
 
 class _FilterBarState extends State<FilterBar> {
   bool _isInitialized = false; // 新增标志
+  FilterBarModel? _filterBarModel; // 添加 FilterBarModel 成员变量
   // 本地数据列表，部分将由API数据替代或补充
   List<file_data.GeneralType> _priceListLocal = [];
   List<file_data.GeneralType> _rentTypeListLocal = [];
@@ -258,7 +259,9 @@ class _FilterBarState extends State<FilterBar> {
   }
 
   _loadDataToModel() {
-    final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context);
+    // 使用成员变量 _filterBarModel
+    if (_filterBarModel == null) return; // Add null check
+    final filterModel = _filterBarModel!;
     
     Map<String, List<file_data.GeneralType>> dataForModel = {
       // 使用本地静态数据
@@ -285,8 +288,10 @@ class _FilterBarState extends State<FilterBar> {
 
   // 更新顶部筛选按钮的标题
   void _updateTitles() {
-    final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context);
-
+    // 使用成员变量 _filterBarModel
+    if (_filterBarModel == null) return; // Add null check
+    final filterModel = _filterBarModel!;
+ 
     // 区域标题
     var districtName = '区域';
     if (filterModel.selectedDistrictId != null && filterModel.selectedDistrictId != 'area_any') {
@@ -354,22 +359,24 @@ class _FilterBarState extends State<FilterBar> {
       _handleCityChange(cityModel); // 确保在获取筛选选项后，根据当前城市调整区域
 
       // 监听 FilterBarModel 的变化
-      final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context);
+      // final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context); // 移除此行
 
       // 根据 initialRentType 设置默认选中项
       if (widget.initialRentType != null && widget.initialRentType!.isNotEmpty) {
-        final rentTypeList = filterModel.dataList['rentTypeList'] ?? _rentTypeListLocal;
+        // 使用成员变量 _filterBarModel
+        final rentTypeList = _filterBarModel!.dataList['rentTypeList'] ?? _rentTypeListLocal;
         final selectedItem = rentTypeList.firstWhere(
           (item) => item.name == widget.initialRentType,
           orElse: () => file_data.GeneralType('', ''), // 如果找不到匹配项，使用一个空对象
         );
         if (selectedItem.id.isNotEmpty) {
-          filterModel.selectedRentTypeId = selectedItem.id;
+          // 使用成员变量 _filterBarModel
+          _filterBarModel!.selectedRentTypeId = selectedItem.id;
           _selectedRentTypeIdLocal = selectedItem.id;
         }
       }
 
-      filterModel.addListener(_onFilterModelChange);
+      _filterBarModel!.addListener(_onFilterModelChange); // 使用成员变量并添加监听
       _updateTitles(); // 初始化时更新标题
       // _onChange(); // 初始化时不再触发一次筛选，由 TabSearch 负责首次加载
 
@@ -386,6 +393,7 @@ class _FilterBarState extends State<FilterBar> {
   void _onFilterModelChange() {
     if (mounted) {
       _updateTitles();
+      // 确保在模型变化后触发 onChange
       _onChange();
       if (!Scaffold.of(context).isEndDrawerOpen) {
          setState(() {
@@ -399,8 +407,8 @@ class _FilterBarState extends State<FilterBar> {
   void dispose() {
     final cityModel = ScopedModelHelper.getModel<CityModel>(context);
     cityModel.removeListener(_cityChangedListener);
-    final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context);
-    filterModel.removeListener(_onFilterModelChange); // <--- 移除监听器
+    // 移除对成员变量的监听
+    _filterBarModel?.removeListener(_onFilterModelChange);
     super.dispose();
   }
 
@@ -410,7 +418,9 @@ class _FilterBarState extends State<FilterBar> {
   }
 
   void _handleCityChange(CityModel cityModel) {
-    final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context);
+    // 使用成员变量 _filterBarModel
+    if (_filterBarModel == null) return; // Add null check
+    final filterModel = _filterBarModel!;
     String? currentCityNameFromModel = cityModel.city?.name;
 
     if (currentCityNameFromModel != null && currentCityNameFromModel != '定位中...') {
@@ -445,8 +455,10 @@ class _FilterBarState extends State<FilterBar> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // 在这里获取 ScopedModel 的引用
+    _filterBarModel = ScopedModelHelper.getModel<FilterBarModel>(context);
   }
-
+ 
   @override
   Widget build(BuildContext context) {
     // 在 build 方法开始时调用 _updateTitles，以确保标题与 FilterBarModel 同步
