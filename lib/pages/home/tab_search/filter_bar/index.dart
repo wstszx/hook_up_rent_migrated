@@ -13,8 +13,9 @@ import 'package:rent_share/services/region_service.dart'; // 引入 RegionServic
 
 class FilterBar extends StatefulWidget {
   final ValueChanged<file_data.FilterBarResult>? onChange;
+  final String? initialRentType; // 新增参数
 
-  const FilterBar({super.key, this.onChange});
+  const FilterBar({super.key, this.onChange, this.initialRentType}); // 添加到构造函数
 
   @override
   State<FilterBar> createState() => _FilterBarState();
@@ -352,7 +353,23 @@ class _FilterBarState extends State<FilterBar> {
 
       // 监听 FilterBarModel 的变化
       final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context);
+
+      // 根据 initialRentType 设置默认选中项
+      if (widget.initialRentType != null && widget.initialRentType!.isNotEmpty) {
+        final rentTypeList = filterModel.dataList['rentTypeList'] ?? _rentTypeListLocal;
+        final selectedItem = rentTypeList.firstWhere(
+          (item) => item.name == widget.initialRentType,
+          orElse: () => file_data.GeneralType('', ''), // 如果找不到匹配项，使用一个空对象
+        );
+        if (selectedItem.id.isNotEmpty) {
+          filterModel.selectedRentTypeId = selectedItem.id;
+          _selectedRentTypeIdLocal = selectedItem.id;
+        }
+      }
+
       filterModel.addListener(_onFilterModelChange);
+      _updateTitles(); // 初始化时更新标题
+      _onChange(); // 初始化时触发一次筛选，以便加载数据
     });
   }
 

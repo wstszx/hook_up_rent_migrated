@@ -22,6 +22,7 @@ class _TabSearchState extends State<TabSearch> {
   bool _isLoading = true;
   filter_data.FilterBarResult? _currentFilterParams; // 用于存储当前的筛选参数
   String _currentSearchWord = ''; // 用于存储当前搜索词
+  String? _initialRentType; // 新增状态变量
 
   @override
   void initState() {
@@ -40,16 +41,24 @@ class _TabSearchState extends State<TabSearch> {
     // 获取路由参数
     final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final String? initialSearchWord = arguments?['searchWord'] as String?;
+    final String? initialRentType = arguments?['rentType'] as String?; // 获取 rentType 参数
 
     if (initialSearchWord != null && initialSearchWord.isNotEmpty) {
       setState(() {
         _currentSearchWord = initialSearchWord;
       });
     }
+
+    // 将获取到的 initialRentType 存储到状态变量中
+    if (initialRentType != null && initialRentType.isNotEmpty) {
+       _initialRentType = initialRentType;
+    }
+
     // 无论是否有初始搜索词，都获取一次数据
     // 如果有搜索词，_fetchRoomsData 会使用它
     // 如果没有，_fetchRoomsData 会按现有逻辑（筛选条件、默认城市）获取
     _fetchRoomsData(searchWord: _currentSearchWord);
+    // _initialRentType 将传递给 FilterBar 处理默认选中
   }
 
   Future<void> _fetchRoomsData({String? searchWord}) async {
@@ -178,6 +187,7 @@ class _TabSearchState extends State<TabSearch> {
           SizedBox(
             height: 41,
             child: FilterBar(
+              initialRentType: _initialRentType, // 将 _initialRentType 传递给 FilterBar
               onChange: (filter_data.FilterBarResult result) {
                 setState(() {
                   _currentFilterParams = result;
