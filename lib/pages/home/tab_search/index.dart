@@ -81,8 +81,8 @@ class _TabSearchState extends State<TabSearch> {
     }
 
 
-    _fetchRoomsData(searchWord: _currentSearchWord);
     // _initialRentType 将传递给 FilterBar 处理默认选中
+    // _fetchRoomsData(searchWord: _currentSearchWord); // Removed to prevent double fetch on initial load
   }
 
   Future<void> _fetchRoomsData({String? searchWord}) async {
@@ -212,6 +212,9 @@ class _TabSearchState extends State<TabSearch> {
             height: 41,
             child: FilterBar(
               initialRentType: _initialRentType, // 将 _initialRentType 传递给 FilterBar
+              onInitialized: () { // 新增 onInitialized 回调
+                 _fetchRoomsData(searchWord: _currentSearchWord); // 在 FilterBar 初始化完成后触发首次数据加载
+              },
               onChange: (filter_data.FilterBarResult result) {
                 setState(() {
                   _currentFilterParams = result;

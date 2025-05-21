@@ -14,8 +14,9 @@ import 'package:rent_share/services/region_service.dart'; // 引入 RegionServic
 class FilterBar extends StatefulWidget {
   final ValueChanged<file_data.FilterBarResult>? onChange;
   final String? initialRentType; // 新增参数
+  final VoidCallback? onInitialized; // 新增参数
 
-  const FilterBar({super.key, this.onChange, this.initialRentType}); // 添加到构造函数
+  const FilterBar({super.key, this.onChange, this.initialRentType, this.onInitialized}); // 添加到构造函数
 
   @override
   State<FilterBar> createState() => _FilterBarState();
@@ -385,6 +386,8 @@ class _FilterBarState extends State<FilterBar> {
         setState(() {
           _isInitialized = true;
         });
+        // 在初始化完成后触发回调
+        widget.onInitialized?.call();
       }
     });
   }
