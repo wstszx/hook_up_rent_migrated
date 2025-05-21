@@ -57,6 +57,30 @@ class _TabSearchState extends State<TabSearch> {
     // 无论是否有初始搜索词，都获取一次数据
     // 如果有搜索词，_fetchRoomsData 会使用它
     // 如果没有，_fetchRoomsData 会按现有逻辑（筛选条件、默认城市）获取
+
+    // 根据 initialRentType 初始化 _currentFilterParams
+    if (_initialRentType != null && _initialRentType!.isNotEmpty) {
+      // 这里需要根据租赁方式的名称找到对应的 ID
+      // 假设租赁方式的名称和 ID 是一致的，或者可以通过某种方式获取 ID
+      // 如果需要从 FilterBarModel 获取数据，可能需要等待 FilterBar 初始化完成
+      // 更可靠的方式是在 FilterBar 的 onChange 回调中处理首次加载
+      // 但为了快速实现，先假设名称和ID一致
+      _currentFilterParams = filter_data.FilterBarResult(
+        rentTypeId: _initialRentType,
+        // 其他筛选条件保持默认或从其他地方获取
+        cityId: null, // 城市ID通常由 CityModel 管理
+        districtId: null,
+        priceId: null,
+        roomTypeIds: null,
+        orientationIds: null,
+        floorIds: null,
+        tagIds: null,
+      );
+    } else {
+       _currentFilterParams = null; // 没有初始租赁方式，清空筛选参数
+    }
+
+
     _fetchRoomsData(searchWord: _currentSearchWord);
     // _initialRentType 将传递给 FilterBar 处理默认选中
   }

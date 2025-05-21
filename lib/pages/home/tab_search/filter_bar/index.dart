@@ -22,6 +22,7 @@ class FilterBar extends StatefulWidget {
 }
 
 class _FilterBarState extends State<FilterBar> {
+  bool _isInitialized = false; // 新增标志
   // 本地数据列表，部分将由API数据替代或补充
   List<file_data.GeneralType> _priceListLocal = [];
   List<file_data.GeneralType> _rentTypeListLocal = [];
@@ -232,13 +233,14 @@ class _FilterBarState extends State<FilterBar> {
   }
 
   _onChange() {
-    if (widget.onChange == null) return;
-
+    // 只有在初始化完成后才触发 onChange 回调
+    if (!_isInitialized || widget.onChange == null) return;
+ 
     final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context);
     final params = filterModel.getApiFilterParams;
     final cityModel = ScopedModelHelper.getModel<CityModel>(context);
     String? currentCityId = filterModel.selectedCityId;
-
+ 
     widget.onChange!(
       file_data.FilterBarResult(
         cityId: currentCityId,
@@ -369,7 +371,14 @@ class _FilterBarState extends State<FilterBar> {
 
       filterModel.addListener(_onFilterModelChange);
       _updateTitles(); // 初始化时更新标题
-      _onChange(); // 初始化时触发一次筛选，以便加载数据
+      // _onChange(); // 初始化时不再触发一次筛选，由 TabSearch 负责首次加载
+
+      // 设置初始化完成标志
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
     });
   }
 
