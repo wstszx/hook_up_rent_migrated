@@ -5,7 +5,8 @@ import 'package:rent_share/config.dart';
 import 'package:rent_share/pages/home/tab_search/data_list.dart';
 import 'package:rent_share/pages/home/tab_search/filter_bar/filter_drawer.dart';
 import 'package:rent_share/pages/home/tab_search/filter_bar/index.dart';
-import 'package:rent_share/pages/home/tab_search/filter_bar/data.dart' as filter_data; // Added import
+import 'package:rent_share/pages/home/tab_search/filter_bar/data.dart' as filter_data;
+import 'package:rent_share/scoped_model/room_filter.dart'; // Import FilterBarModel
 import 'package:rent_share/pages/utils/dio_http.dart';
 import 'package:rent_share/widgets/root_list_item_widget.dart';
 import 'package:rent_share/widgets/search_bar/index.dart' as custom;
@@ -191,13 +192,20 @@ class _TabSearchState extends State<TabSearch> {
     return Scaffold(
       endDrawer: const FilterDrawer(),
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () {
+            final filterModel = ScopedModel.of<FilterBarModel>(context, rebuildOnChange: false);
+            filterModel.clearSelections();
+            Navigator.of(context).pop();
+          },
+        ),
         actions: [Container()],
         elevation: 0,
         title: custom.SearchBar(
           showLocation: true,
           showMap: true,
           inputValue: _currentSearchWord, // 绑定到当前搜索词
-          // onSearch: null, // 在搜索页，点击搜索框不应再导航
           onSearchSubmit: (String value) {
             setState(() {
               _currentSearchWord = value;
@@ -239,6 +247,13 @@ class _TabSearchState extends State<TabSearch> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    final filterModel = ScopedModel.of<FilterBarModel>(context, rebuildOnChange: false);
+    filterModel.clearSelections();
+    super.dispose();
   }
 }
 

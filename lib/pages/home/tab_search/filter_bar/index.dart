@@ -355,31 +355,26 @@ class _FilterBarState extends State<FilterBar> {
     Timer.run(() async { // 改为 async
       await _fetchFilterOptions(); // <--- 调用API获取数据
       
-      final cityModel = ScopedModelHelper.getModel<CityModel>(context);
+final cityModel = ScopedModelHelper.getModel<CityModel>(context);
+      _filterBarModel = ScopedModelHelper.getModel<FilterBarModel>(context); // 确保在 initState 中获取
       cityModel.addListener(_cityChangedListener);
-      _handleCityChange(cityModel); // 确保在获取筛选选项后，根据当前城市调整区域
-
-      // 监听 FilterBarModel 的变化
-      // final filterModel = ScopedModelHelper.getModel<FilterBarModel>(context); // 移除此行
-
       // 根据 initialRentType 设置默认选中项
       if (widget.initialRentType != null && widget.initialRentType!.isNotEmpty) {
-        // 使用成员变量 _filterBarModel
         final rentTypeList = _filterBarModel!.dataList['rentTypeList'] ?? _rentTypeListLocal;
         final selectedItem = rentTypeList.firstWhere(
           (item) => item.name == widget.initialRentType,
-          orElse: () => file_data.GeneralType('', ''), // 如果找不到匹配项，使用一个空对象
+          orElse: () => file_data.GeneralType('', ''),
         );
         if (selectedItem.id.isNotEmpty) {
-          // 使用成员变量 _filterBarModel
           _filterBarModel!.selectedRentTypeId = selectedItem.id;
           _selectedRentTypeIdLocal = selectedItem.id;
         }
       }
+      
+      _handleCityChange(cityModel); // 确保在获取筛选选项后，根据当前城市调整区域
 
       _filterBarModel!.addListener(_onFilterModelChange); // 使用成员变量并添加监听
       _updateTitles(); // 初始化时更新标题
-      // _onChange(); // 初始化时不再触发一次筛选，由 TabSearch 负责首次加载
 
       // 设置初始化完成标志
       if (mounted) {
@@ -452,7 +447,7 @@ class _FilterBarState extends State<FilterBar> {
     filterModel.selectedDistrictId = _dynamicAreaOptionsForPicker.isNotEmpty ? _dynamicAreaOptionsForPicker[0].id : 'area_any';
     _selectedDistrictIdLocal = filterModel.selectedDistrictId!;
     _updateTitles();
-    _onChange();
+    // _onChange(); // 移除此处的直接调用，避免城市变化时立即触发两次数据请求
   }
 
   @override
