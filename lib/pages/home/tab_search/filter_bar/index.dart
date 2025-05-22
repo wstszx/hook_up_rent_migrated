@@ -352,10 +352,12 @@ class _FilterBarState extends State<FilterBar> {
     _selectedRentTypeIdLocal = _rentTypeListLocal.isNotEmpty ? _rentTypeListLocal[0].id : 'rent_type_any';
     _selectedPriceIdLocal = _priceListLocal.isNotEmpty ? _priceListLocal[0].id : 'price_any';
     
-    Timer.run(() async { // 改为 async
-      await _fetchFilterOptions(); // <--- 调用API获取数据
-      
-final cityModel = ScopedModelHelper.getModel<CityModel>(context);
+    Timer.run(() async {
+      if (!mounted) return; // Add mounted check at the beginning of the async block
+      await _fetchFilterOptions();
+      if (!mounted) return; // Add mounted check after async operation
+
+      final cityModel = ScopedModelHelper.getModel<CityModel>(context);
       _filterBarModel = ScopedModelHelper.getModel<FilterBarModel>(context); // 确保在 initState 中获取
       cityModel.addListener(_cityChangedListener);
       // 根据 initialRentType 设置默认选中项
@@ -389,16 +391,18 @@ final cityModel = ScopedModelHelper.getModel<CityModel>(context);
 
   // 新增：当 FilterBarModel 变化时（例如抽屉关闭后），调用此方法
   void _onFilterModelChange() {
-    if (mounted) {
-      _updateTitles();
-      // 确保在模型变化后触发 onChange
-      _onChange();
-      if (!Scaffold.of(context).isEndDrawerOpen) {
-         setState(() {
-           isFilterActive = false;
-         });
+    // 延迟执行，确保在下一个帧绘制时检查 mounted
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _updateTitles();
+        _onChange();
+        if (!Scaffold.of(context).isEndDrawerOpen) {
+           setState(() {
+             isFilterActive = false;
+           });
+        }
       }
-    }
+    });
   }
 
  @override
