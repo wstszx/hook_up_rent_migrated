@@ -415,6 +415,7 @@ class _FilterBarState extends State<FilterBar> {
   }
 
   void _cityChangedListener() {
+    if (!mounted) return; // Add this line
     final cityModel = ScopedModelHelper.getModel<CityModel>(context);
     _handleCityChange(cityModel);
   }
