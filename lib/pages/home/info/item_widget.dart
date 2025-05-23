@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:rent_share/config.dart';
 import 'package:rent_share/pages/home/info/info_data.dart';
-import 'package:rent_share/widgets/common_image.dart';
 
 var textStyle = const TextStyle(color: Colors.black54);
 
@@ -18,7 +18,27 @@ class InfoItemWidget extends StatelessWidget {
         padding: const EdgeInsets.only(left: 10, bottom: 10, right: 10),
         child: Row(
         children: [
-          CommonImage(data.imageUrl, width: 120, height: 90),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(5.0),
+            child: Image.network(
+              data.imageUrl.startsWith('http')
+                  ? data.imageUrl
+                  : '${Config.BaseUrl}${data.imageUrl}',
+              width: 120.0,
+              height: 90.0,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 120.0,
+                  height: 90.0,
+                  color: Colors.grey[300],
+                  child: const Center(
+                    child: Text('暂无图片'),
+                  ),
+                );
+              },
+            ),
+          ),
           const Padding(padding: EdgeInsets.only(left: 10)),
           Expanded(
             child: Column(
