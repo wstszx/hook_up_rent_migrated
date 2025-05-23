@@ -431,9 +431,9 @@ router.put('/:id', authMiddleware, (req, res, next) => {
         if (district !== undefined) roomToUpdate.district = district;
         if (address !== undefined) roomToUpdate.address = address;
         if (rentType !== undefined) roomToUpdate.rentType = rentType;
-        if (roomType !== undefined) roomToUpdate.roomType = roomType;
-        if (floor !== undefined) roomToUpdate.floor = floor;
-        if (orientation !== undefined) roomToUpdate.orientation = orientation;
+        if (roomType !== undefined) roomToUpdate.roomType = roomTypeMap[roomType] || roomType;
+        if (floor !== undefined) roomToUpdate.floor = floorMap[floor] || floor;
+        if (orientation !== undefined) roomToUpdate.orientation = orientationMap[orientation] || orientation;
         if (tags !== undefined) roomToUpdate.tags = Array.isArray(tags) ? tags : JSON.parse(tags); // Assuming tags might also be a JSON string array
         if (status !== undefined) roomToUpdate.status = status;
 
@@ -449,7 +449,7 @@ router.put('/:id', authMiddleware, (req, res, next) => {
             } else {
                 console.warn('Received invalid longitude/latitude for room update:', longitude, latitude);
             }
-        } else if (req.body.hasOwnProperty('longitude') && req.body.hasOwnProperty('latitude') && longitude === null && latitude === null) {
+        } else if (('longitude' in req.body) && ('latitude' in req.body) && longitude === null && latitude === null) {
             // Explicitly clear location if longitude and latitude are provided as null
             roomToUpdate.location = undefined;
         }
