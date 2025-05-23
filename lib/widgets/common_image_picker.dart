@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data'; // Import for Uint8List
 
+import 'package:flutter/foundation.dart' show kIsWeb; // Import kIsWeb
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -10,9 +12,9 @@ const List<String> defaultImages = [
 ];
 
 // 设置图片宽高
-var imageWidth = 750.0;
-var imageHeight = 424.0;
-var imageWidgetHeightRatio = imageWidth / imageHeight; // 宽高比
+const imageWidth = 750.0;
+const imageHeight = 424.0;
+const imageWidgetHeightRatio = imageWidth / imageHeight; // 宽高比
 
 class CommonImagePicker extends StatefulWidget {
   final ValueChanged<List<XFile>>? onChange; // Explicitly typed
@@ -64,12 +66,42 @@ class _CommonImagePickerState extends State<CommonImagePicker> {
       return Stack(
         clipBehavior: Clip.none,
         children: [
-          Image.file(
-            File(file.path),
-            width: width,
-            height: height,
-            fit: BoxFit.cover,
-          ),
+          // Conditionally render based on platform
+          if (kIsWeb)
+            FutureBuilder<Uint8List>(
+              future: file.readAsBytes(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done &&
+                    snapshot.hasData) {
+                  return Image.memory(
+                    snapshot.data!,
+                    width: width,
+                    height: height,
+                    fit: BoxFit.cover,
+                  );
+                } else if (snapshot.hasError) {
+                  return Container(
+                    width: width,
+                    height: height,
+                    color: Colors.red.shade100,
+                    child: const Center(child: Text('加载失败')),
+                  );
+                }
+                return Container(
+                  width: width,
+                  height: height,
+                  color: Colors.grey.shade200,
+                  child: const Center(child: CircularProgressIndicator()),
+                );
+              },
+            )
+          else
+            Image.file(
+              File(file.path),
+              width: width,
+              height: height,
+              fit: BoxFit.cover,
+            ),
           Positioned(
             right: -20,
             top: -20,

@@ -20,8 +20,8 @@ class DioHttp {
       _context = context;
       var options = BaseOptions(
           baseUrl: Config.BaseUrl,
-          connectTimeout: const Duration(milliseconds: 1000 * 10),
-          receiveTimeout: const Duration(milliseconds: 1000 * 3),
+          connectTimeout: const Duration(milliseconds: 1000 * 10), // Keep connect timeout at 10 seconds
+          receiveTimeout: const Duration(milliseconds: 1000 * 30), // Increase receive timeout to 30 seconds
           extra: {'context': context});
       var client = Dio(options);
       _client = client;

@@ -1,4 +1,6 @@
+import 'dart:convert'; // Import for jsonEncode
 import 'dart:io';
+import 'dart:typed_data'; // Import for Uint8List
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -15,11 +17,12 @@ import 'package:mime/mime.dart'; // For lookupMimeType
 import 'package:path/path.dart' as p; // For p.extension
 import 'package:rent_share/widgets/common_floating_button.dart';
 import 'package:rent_share/widgets/common_form_item.dart';
-import 'package:rent_share/widgets/common_image_picker.dart';
+import 'package:rent_share/widgets/common_image_picker.dart'; // Import for imageWidgetHeightRatio
 import 'package:rent_share/widgets/common_radio_form_item.dart';
 import 'package:rent_share/widgets/common_select_form_item.dart';
 import 'package:rent_share/widgets/common_title.dart';
 import 'package:rent_share/services/region_service.dart'; // 引入 RegionService
+import 'package:rent_share/widgets/common_image_picker.dart' show imageWidgetHeightRatio; // Import only imageWidgetHeightRatio
 
 class RoomAddPage extends StatefulWidget {
   final bool isEdit;
@@ -135,11 +138,9 @@ class _RoomAddPageState extends State<RoomAddPage> {
                   orElse: () => filter_data.orientedList.first).id;
 
 
-          // Set images if available (Note: We can't directly set _pickedImages with remote URLs)
-          // You might need a different approach to display existing images,
-          // perhaps a separate list of image URLs.
+          // Set images if available
           if (data['images'] != null && data['images'] is List) {
-             // Handle displaying existing images if needed
+            _existingImageUrls = List<String>.from(data['images']);
           }
 
           isLoading = false;
@@ -180,8 +181,9 @@ class _RoomAddPageState extends State<RoomAddPage> {
   }
 
   // --- Image Picker & Room Appliances ---
-  List<File> _pickedImages = [];
+  List<XFile> _pickedImages = [];
   List<String> _selectedAppliances = [];
+  List<String> _existingImageUrls = []; // Add this to store existing image URLs
 
 
   // --- Helper methods for mapping int to String ---
@@ -252,6 +254,7 @@ class _RoomAddPageState extends State<RoomAddPage> {
       'floor': selectedFloorId,       // Use ID directly
       'orientation': selectedOrientedId, // Use ID directly
       'tags': tags,
+      if (isUpdate) 'imagesToKeep': jsonEncode(_existingImageUrls), // Send existing image URLs
       // 'roomImages' will be handled by FormData
     };
 
@@ -268,8 +271,10 @@ class _RoomAddPageState extends State<RoomAddPage> {
     FormData formData = FormData.fromMap(params);
     if (_pickedImages.isNotEmpty) {
       for (var i = 0; i < _pickedImages.length; i++) {
-        File imageFile = _pickedImages[i];
-        String? mimeTypeStr = lookupMimeType(imageFile.path);
+        XFile imageFile = _pickedImages[i];
+        
+        // Prefer XFile's mimeType, fallback to lookupMimeType
+        String? mimeTypeStr = imageFile.mimeType ?? lookupMimeType(imageFile.name);
         MediaType? mediaType;
 
         if (mimeTypeStr != null) {
@@ -279,21 +284,23 @@ class _RoomAddPageState extends State<RoomAddPage> {
           }
         }
 
-        // Fallback if MIME type couldn't be determined, though unlikely for valid images
+        // Fallback if MIME type couldn't be determined
         mediaType ??= MediaType('application', 'octet-stream');
 
-        // Get file extension for the filename
-        String extension = p.extension(imageFile.path); // e.g. '.jpg'
+        // Use imageFile.name for filename and extension
+        String filename = imageFile.name;
+        String extension = p.extension(filename);
         if (extension.startsWith('.')) {
-          extension = extension.substring(1); // remove leading dot -> 'jpg'
+          extension = extension.substring(1);
         }
 
+        Uint8List bytes = await imageFile.readAsBytes();
 
         formData.files.add(MapEntry(
-          'roomImages', // This must match the field name expected by Multer on the backend
-          await MultipartFile.fromFile(
-            imageFile.path,
-            filename: 'room_image_$i.$extension', // Use dynamic extension
+          'roomImages',
+          MultipartFile.fromBytes(
+            bytes,
+            filename: filename, // Use original filename from XFile
             contentType: mediaType,
           ),
         ));
@@ -444,11 +451,13 @@ class _RoomAddPageState extends State<RoomAddPage> {
             },
           ),
           const CommonTitle('房屋图像 (最多9张)'),
+          // Display existing images if in edit mode
+          if (widget.isEdit && _existingImageUrls.isNotEmpty)
+            _buildExistingImages(),
           CommonImagePicker(
-            onChange: (xFiles) { // xFiles is List<XFile>
+            onChange: (xFiles) {
               setState(() {
-                // Convert List<XFile> to List<File>
-                _pickedImages = xFiles.map((xfile) => File(xfile.path)).toList();
+                _pickedImages = xFiles; // Directly assign XFile list
               });
             },
           ),
@@ -464,13 +473,13 @@ class _RoomAddPageState extends State<RoomAddPage> {
             ),
           ),
           const CommonTitle('房屋配置'),
-          RoomAppliance( // Changed from named parameter to positional
-            (selectedItems) { // selectedItems is List<RoomApplianceItem>
+          RoomAppliance(
+            (selectedItems) {
               setState(() {
                 _selectedAppliances = selectedItems
-                    .where((item) => item.isChecked) // Filter for checked items
-                    .map((item) => item.title)       // Extract the title
-                    .toList();                      // Convert to List<String>
+                    .where((item) => item.isChecked)
+                    .map((item) => item.title)
+                    .toList();
               });
             },
           ),
@@ -488,6 +497,56 @@ class _RoomAddPageState extends State<RoomAddPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildExistingImages() {
+    var width = (MediaQuery.of(context).size.width - 10 * 4) / 3;
+    var height = width / imageWidgetHeightRatio; // Use the same ratio as CommonImagePicker
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: _existingImageUrls.map((url) {
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Image.network(
+                url,
+                width: width,
+                height: height,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // Handle image loading errors
+                  return Container(
+                    width: width,
+                    height: height,
+                    color: Colors.red.shade100,
+                    child: const Center(child: Text('加载失败')),
+                  );
+                },
+              ),
+              Positioned(
+                right: -20,
+                top: -20,
+                child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _existingImageUrls.remove(url);
+                    });
+                  },
+                  icon: const Icon(
+                    Icons.delete_forever,
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
       ),
     );
   }
