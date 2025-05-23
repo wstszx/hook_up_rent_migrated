@@ -145,7 +145,7 @@ class _TabSearchState extends State<TabSearch> {
           if (room['images'] != null && (room['images'] as List).isNotEmpty) {
             String rawImageUrl = (room['images'] as List)[0] as String;
             if (rawImageUrl.startsWith('/')) {
-              imageUrl = Config.BaseUrl + rawImageUrl;
+              imageUrl = Config.apiBaseUrl + rawImageUrl;
             } else {
               imageUrl = rawImageUrl;
             }
