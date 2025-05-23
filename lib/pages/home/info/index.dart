@@ -5,8 +5,9 @@ import 'package:rent_share/pages/utils/dio_http.dart'; // Import DioHttp
 
 class Info extends StatefulWidget {
   final bool showTitle;
+  final int? limit; // Add limit parameter
 
-  const Info({super.key, this.showTitle = false});
+  const Info({super.key, this.showTitle = false, this.limit});
 
   @override
   State<Info> createState() => _InfoState();
@@ -23,7 +24,8 @@ class _InfoState extends State<Info> {
 
   Future<void> _fetchNewsData() async {
     try {
-      final res = await DioHttp.of(context).get('/api/news');
+      final res = await DioHttp.of(context).get('/api/news',
+          widget.limit != null ? {'limit': widget.limit} : null);
       if (res.data != null && res.data is List) {
         List<InfoItem> newsItems = (res.data as List)
             .map((item) => InfoItem(

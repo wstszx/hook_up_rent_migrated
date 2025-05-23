@@ -30,7 +30,7 @@ class TabIndex extends StatelessWidget {
           CommonSwiper(),
           IndexNavigator(),
           IndexRecommand(),
-          Info(showTitle: true),
+          Info(showTitle: true, limit: 5),
         ],
       ),
     );
