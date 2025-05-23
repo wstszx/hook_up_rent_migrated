@@ -63,7 +63,7 @@ class Header extends StatelessWidget {
   Container _loginBuilder(BuildContext context) {
     var userInfo = ScopedModelHelper.getModel<AuthModel>(context).userInfo;
 
-    String userName = userInfo?.nickname ?? '已登录用户名';
+    String userName = userInfo?.username ?? '已登录用户名'; // 修改为显示用户名
     String userImage = userInfo?.avatar ??
         'https://c-ssl.duitang.com/uploads/blog/202101/23/20210123215342_3bbf3.thumb.1000_0.jpeg';
 

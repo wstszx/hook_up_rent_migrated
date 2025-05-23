@@ -4,13 +4,14 @@ part 'user_info.g.dart';
 
 @JsonSerializable()
 class UserInfo {
-  final String avatar;
-  final String gender;
-  final String nickname;
-  final String phone;
-  final int id;
+  final String? avatar; // 改为可空
+  final String? gender; // 改为可空
+  final String? nickname; // 改为可空
+  final String username;
+  final String? phone; // 改为可空
+  final String id; // 将 id 类型改为 String
 
-  UserInfo(this.avatar, this.gender, this.nickname, this.phone, this.id);
+  UserInfo(this.avatar, this.gender, this.nickname, this.username, this.phone, this.id); // 更新构造函数
 
   // factory UserInfo.formJson(Map<String, dynamic> json) => UserInfo(
   //     json['avatar'] as String,

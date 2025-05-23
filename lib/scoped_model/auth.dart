@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -26,7 +27,7 @@ class AuthModel extends Model {
   }
 
   _getUserInfo(BuildContext context) async {
-    const url = '/api/me'; // Corrected API endpoint for fetching user info
+    const url = '/api/auth/me'; // Corrected API endpoint for fetching user info
     try {
       var response = await DioHttp.of(context).get(url, null, _token);
 
@@ -45,12 +46,12 @@ class AuthModel extends Model {
         _userInfo = userInfo; // Corrected assignment
         notifyListeners();
       } else {
-        print('Failed to get user info: ${response.statusCode} ${response.data}');
+        print('Failed to get user info: ${response.statusCode} ${response.data}'); // 修改打印语句
         // Optionally logout or clear token if user info fetch fails consistently
         // logout();
       }
     } catch (e) {
-      print('Error fetching user info: $e');
+      print('Error fetching user info: $e'); // 修改打印语句
       // Optionally logout or clear token on error
       // logout();
     }

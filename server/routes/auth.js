@@ -171,4 +171,34 @@ router.put('/me', authMiddleware, async (req, res) => {
     }
 });
 
+// GET /api/auth/me - 获取当前用户信息 (需要认证)
+router.get('/me', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.userId; // 从JWT token中获取 (这是MongoDB的_id)
+
+        const user = await User.findById(userId).select('-password'); // 查找用户，排除密码字段
+
+        if (!user) {
+            return res.status(404).json({ message: '用户未找到' });
+        }
+
+        res.json({
+            message: '成功获取用户信息',
+            user: {
+                id: user._id,
+                username: user.username,
+                // 根据需要添加其他用户字段，例如 avatar, nickname, gender, phone
+                avatar: user.avatar, // Assuming these fields exist on the User model
+                nickname: user.nickname,
+                gender: user.gender,
+                phone: user.phone,
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching user info:', error);
+        res.status(500).json({ message: '服务器内部错误，获取用户信息失败' });
+    }
+});
+
 module.exports = router;
